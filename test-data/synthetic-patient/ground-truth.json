@@ -1,0 +1,601 @@
+{
+  "patient": {
+    "name": "Alex Morgan",
+    "dob": "1991-08-14",
+    "sex": "Male",
+    "patientId": "SYN-2025-001"
+  },
+  "panels": [
+    {
+      "file": "01-baseline-lab-grid.pdf",
+      "date": "2025-01-10",
+      "provider": "Northstar Reference Laboratory",
+      "type": "Blood report",
+      "biomarkers": [
+        {
+          "name": "Vitamin D, 25-OH",
+          "value": 18,
+          "unit": "ng/mL",
+          "referenceRange": "30–100",
+          "status": "low"
+        },
+        {
+          "name": "HbA1c",
+          "value": 5.8,
+          "unit": "%",
+          "referenceRange": "4.0–5.6",
+          "status": "high"
+        },
+        {
+          "name": "Fasting Glucose",
+          "value": 104,
+          "unit": "mg/dL",
+          "referenceRange": "70–99",
+          "status": "high"
+        },
+        {
+          "name": "Total Cholesterol",
+          "value": 219,
+          "unit": "mg/dL",
+          "referenceRange": "<200",
+          "status": "high"
+        },
+        {
+          "name": "LDL Cholesterol",
+          "value": 142,
+          "unit": "mg/dL",
+          "referenceRange": "<100",
+          "status": "high"
+        },
+        {
+          "name": "HDL Cholesterol",
+          "value": 41,
+          "unit": "mg/dL",
+          "referenceRange": ">40",
+          "status": "normal"
+        },
+        {
+          "name": "Triglycerides",
+          "value": 180,
+          "unit": "mg/dL",
+          "referenceRange": "<150",
+          "status": "high"
+        },
+        {
+          "name": "Ferritin",
+          "value": 48,
+          "unit": "ng/mL",
+          "referenceRange": "30–400",
+          "status": "normal"
+        },
+        {
+          "name": "TSH",
+          "value": 2.1,
+          "unit": "µIU/mL",
+          "referenceRange": "0.4–4.5",
+          "status": "normal"
+        },
+        {
+          "name": "ALT",
+          "value": 38,
+          "unit": "U/L",
+          "referenceRange": "9–46",
+          "status": "normal"
+        },
+        {
+          "name": "AST",
+          "value": 29,
+          "unit": "U/L",
+          "referenceRange": "10–40",
+          "status": "normal"
+        },
+        {
+          "name": "Creatinine",
+          "value": 0.96,
+          "unit": "mg/dL",
+          "referenceRange": "0.60–1.29",
+          "status": "normal"
+        },
+        {
+          "name": "eGFR",
+          "value": 104,
+          "unit": "mL/min/1.73m²",
+          "referenceRange": ">60",
+          "status": "normal"
+        },
+        {
+          "name": "hs-CRP",
+          "value": 3.2,
+          "unit": "mg/L",
+          "referenceRange": "<1.0",
+          "status": "high"
+        },
+        {
+          "name": "Vitamin B12",
+          "value": 310,
+          "unit": "pg/mL",
+          "referenceRange": "200–1100",
+          "status": "normal"
+        },
+        {
+          "name": "Zinc",
+          "value": 67,
+          "unit": "µg/dL",
+          "referenceRange": "60–130",
+          "status": "normal"
+        },
+        {
+          "name": "Magnesium",
+          "value": 1.9,
+          "unit": "mg/dL",
+          "referenceRange": "1.5–2.5",
+          "status": "normal"
+        }
+      ]
+    },
+    {
+      "file": "02-april-lab-two-column.pdf",
+      "date": "2025-04-15",
+      "provider": "CityCare Pathology Services",
+      "type": "Blood report",
+      "biomarkers": [
+        {
+          "name": "Vitamin D, 25-Hydroxy",
+          "value": 29,
+          "unit": "ng/mL",
+          "referenceRange": "30–100",
+          "status": "low"
+        },
+        {
+          "name": "HbA1c",
+          "value": 5.6,
+          "unit": "%",
+          "referenceRange": "4.0–5.6",
+          "status": "normal"
+        },
+        {
+          "name": "Fasting Glucose",
+          "value": 98,
+          "unit": "mg/dL",
+          "referenceRange": "70–99",
+          "status": "normal"
+        },
+        {
+          "name": "LDL-C",
+          "value": 128,
+          "unit": "mg/dL",
+          "referenceRange": "<100",
+          "status": "high"
+        },
+        {
+          "name": "HDL-C",
+          "value": 44,
+          "unit": "mg/dL",
+          "referenceRange": ">40",
+          "status": "normal"
+        },
+        {
+          "name": "Triglycerides",
+          "value": 145,
+          "unit": "mg/dL",
+          "referenceRange": "<150",
+          "status": "normal"
+        },
+        {
+          "name": "ALT (SGPT)",
+          "value": 35,
+          "unit": "U/L",
+          "referenceRange": "7–45",
+          "status": "normal"
+        },
+        {
+          "name": "Creatinine",
+          "value": 1.02,
+          "unit": "mg/dL",
+          "referenceRange": "0.70–1.30",
+          "status": "normal"
+        },
+        {
+          "name": "eGFR CKD-EPI",
+          "value": 97,
+          "unit": "mL/min/1.73m²",
+          "referenceRange": ">60",
+          "status": "normal"
+        },
+        {
+          "name": "High Sensitivity CRP",
+          "value": 1.8,
+          "unit": "mg/L",
+          "referenceRange": "<1.0",
+          "status": "high"
+        },
+        {
+          "name": "Serum Zinc",
+          "value": 78,
+          "unit": "µg/dL",
+          "referenceRange": "60–120",
+          "status": "normal"
+        },
+        {
+          "name": "Serum Magnesium",
+          "value": 2,
+          "unit": "mg/dL",
+          "referenceRange": "1.7–2.4",
+          "status": "normal"
+        }
+      ]
+    },
+    {
+      "file": "06-august-lab-dense.pdf",
+      "date": "2025-08-20",
+      "provider": "Apex Advanced Diagnostics",
+      "type": "Blood report",
+      "biomarkers": [
+        {
+          "name": "25-OH Vitamin D",
+          "value": 42,
+          "unit": "ng/mL",
+          "referenceRange": "30–100",
+          "status": "normal"
+        },
+        {
+          "name": "Glycated Hemoglobin (HbA1c)",
+          "value": 5.4,
+          "unit": "%",
+          "referenceRange": "4.0–5.6",
+          "status": "normal"
+        },
+        {
+          "name": "Glucose, Fasting",
+          "value": 92,
+          "unit": "mg/dL",
+          "referenceRange": "70–99",
+          "status": "normal"
+        },
+        {
+          "name": "Total Cholesterol",
+          "value": 183,
+          "unit": "mg/dL",
+          "referenceRange": "<200",
+          "status": "normal"
+        },
+        {
+          "name": "LDL-C Calculated",
+          "value": 112,
+          "unit": "mg/dL",
+          "referenceRange": "<100",
+          "status": "high"
+        },
+        {
+          "name": "HDL-C",
+          "value": 48,
+          "unit": "mg/dL",
+          "referenceRange": ">40",
+          "status": "normal"
+        },
+        {
+          "name": "Triglyceride",
+          "value": 101,
+          "unit": "mg/dL",
+          "referenceRange": "<150",
+          "status": "normal"
+        },
+        {
+          "name": "Ferritin",
+          "value": 44,
+          "unit": "ng/mL",
+          "referenceRange": "30–400",
+          "status": "normal"
+        },
+        {
+          "name": "Thyrotropin (TSH)",
+          "value": 2.3,
+          "unit": "µIU/mL",
+          "referenceRange": "0.4–4.5",
+          "status": "normal"
+        },
+        {
+          "name": "Alanine Aminotransferase",
+          "value": 47,
+          "unit": "U/L",
+          "referenceRange": "9–46",
+          "status": "high"
+        },
+        {
+          "name": "Aspartate Aminotransferase",
+          "value": 36,
+          "unit": "U/L",
+          "referenceRange": "10–40",
+          "status": "normal"
+        },
+        {
+          "name": "Serum Creatinine",
+          "value": 1.16,
+          "unit": "mg/dL",
+          "referenceRange": "0.60–1.29",
+          "status": "normal"
+        },
+        {
+          "name": "Estimated GFR",
+          "value": 82,
+          "unit": "mL/min/1.73m²",
+          "referenceRange": ">60",
+          "status": "normal"
+        },
+        {
+          "name": "Creatine Kinase",
+          "value": 420,
+          "unit": "U/L",
+          "referenceRange": "44–196",
+          "status": "high"
+        },
+        {
+          "name": "hsCRP",
+          "value": 0.9,
+          "unit": "mg/L",
+          "referenceRange": "<1.0",
+          "status": "normal"
+        },
+        {
+          "name": "Zinc, Plasma",
+          "value": 92,
+          "unit": "µg/dL",
+          "referenceRange": "60–130",
+          "status": "normal"
+        },
+        {
+          "name": "Magnesium, Serum",
+          "value": 2.1,
+          "unit": "mg/dL",
+          "referenceRange": "1.5–2.5",
+          "status": "normal"
+        },
+        {
+          "name": "Vitamin B12",
+          "value": 485,
+          "unit": "pg/mL",
+          "referenceRange": "200–1100",
+          "status": "normal"
+        },
+        {
+          "name": "Hemoglobin",
+          "value": 15.1,
+          "unit": "g/dL",
+          "referenceRange": "13.2–17.1",
+          "status": "normal"
+        },
+        {
+          "name": "WBC Count",
+          "value": 6.4,
+          "unit": "10³/µL",
+          "referenceRange": "3.8–10.8",
+          "status": "normal"
+        },
+        {
+          "name": "Platelet Count",
+          "value": 248,
+          "unit": "10³/µL",
+          "referenceRange": "140–400",
+          "status": "normal"
+        }
+      ]
+    },
+    {
+      "file": "08-december-lab-compact.pdf",
+      "date": "2025-12-05",
+      "provider": "Northstar Reference Laboratory",
+      "type": "Blood report",
+      "biomarkers": [
+        {
+          "name": "Vitamin D 25-OH",
+          "value": 46,
+          "unit": "ng/mL",
+          "referenceRange": "30–100",
+          "status": "normal"
+        },
+        {
+          "name": "Hb A1c",
+          "value": 5.3,
+          "unit": "%",
+          "referenceRange": "4.0–5.6",
+          "status": "normal"
+        },
+        {
+          "name": "Fasting Glucose",
+          "value": 89,
+          "unit": "mg/dL",
+          "referenceRange": "70–99",
+          "status": "normal"
+        },
+        {
+          "name": "LDL Cholesterol",
+          "value": 108,
+          "unit": "mg/dL",
+          "referenceRange": "<100",
+          "status": "high"
+        },
+        {
+          "name": "HDL Cholesterol",
+          "value": 51,
+          "unit": "mg/dL",
+          "referenceRange": ">40",
+          "status": "normal"
+        },
+        {
+          "name": "Triglycerides",
+          "value": 88,
+          "unit": "mg/dL",
+          "referenceRange": "<150",
+          "status": "normal"
+        },
+        {
+          "name": "ALT",
+          "value": 34,
+          "unit": "U/L",
+          "referenceRange": "9–46",
+          "status": "normal"
+        },
+        {
+          "name": "Creatinine",
+          "value": 1.12,
+          "unit": "mg/dL",
+          "referenceRange": "0.60–1.29",
+          "status": "normal"
+        },
+        {
+          "name": "eGFR",
+          "value": 86,
+          "unit": "mL/min/1.73m²",
+          "referenceRange": ">60",
+          "status": "normal"
+        },
+        {
+          "name": "Creatine Kinase",
+          "value": 190,
+          "unit": "U/L",
+          "referenceRange": "44–196",
+          "status": "normal"
+        },
+        {
+          "name": "hs-CRP",
+          "value": 0.7,
+          "unit": "mg/L",
+          "referenceRange": "<1.0",
+          "status": "normal"
+        },
+        {
+          "name": "Zinc",
+          "value": 95,
+          "unit": "µg/dL",
+          "referenceRange": "60–130",
+          "status": "normal"
+        },
+        {
+          "name": "Magnesium",
+          "value": 2.2,
+          "unit": "mg/dL",
+          "referenceRange": "1.5–2.5",
+          "status": "normal"
+        }
+      ]
+    },
+    {
+      "file": "09-march-lab-scanned-image.pdf",
+      "date": "2026-03-12",
+      "provider": "Community Health Lab",
+      "type": "Blood report",
+      "biomarkers": [
+        {
+          "name": "25-Hydroxy Vitamin D",
+          "value": 44,
+          "unit": "ng/mL",
+          "referenceRange": "30–100",
+          "status": "normal"
+        },
+        {
+          "name": "Hemoglobin A1c",
+          "value": 5.2,
+          "unit": "%",
+          "referenceRange": "4.0–5.6",
+          "status": "normal"
+        },
+        {
+          "name": "LDL Cholesterol",
+          "value": 105,
+          "unit": "mg/dL",
+          "referenceRange": "<100",
+          "status": "high"
+        },
+        {
+          "name": "HDL Cholesterol",
+          "value": 53,
+          "unit": "mg/dL",
+          "referenceRange": ">40",
+          "status": "normal"
+        },
+        {
+          "name": "Triglycerides",
+          "value": 82,
+          "unit": "mg/dL",
+          "referenceRange": "<150",
+          "status": "normal"
+        },
+        {
+          "name": "Ferritin",
+          "value": 39,
+          "unit": "ng/mL",
+          "referenceRange": "30–400",
+          "status": "normal"
+        },
+        {
+          "name": "Creatinine",
+          "value": 1.05,
+          "unit": "mg/dL",
+          "referenceRange": "0.60–1.29",
+          "status": "normal"
+        },
+        {
+          "name": "eGFR",
+          "value": 94,
+          "unit": "mL/min/1.73m²",
+          "referenceRange": ">60",
+          "status": "normal"
+        },
+        {
+          "name": "hs-CRP",
+          "value": 0.6,
+          "unit": "mg/L",
+          "referenceRange": "<1.0",
+          "status": "normal"
+        }
+      ]
+    }
+  ],
+  "documents": [
+    {
+      "file": "03-ankle-injury-consultation.pdf",
+      "type": "Doctor note",
+      "date": "2025-06-05",
+      "episode": "Right ankle sprain",
+      "diagnoses": [
+        "Grade II right lateral ankle sprain"
+      ],
+      "followUps": [
+        "Review in 14 days"
+      ]
+    },
+    {
+      "file": "04-ankle-injury-prescription.pdf",
+      "type": "Prescription",
+      "date": "2025-06-05",
+      "episode": "Right ankle sprain",
+      "medications": [
+        "Naproxen",
+        "Pantoprazole",
+        "Diclofenac gel"
+      ]
+    },
+    {
+      "file": "05-ankle-followup-physio.pdf",
+      "type": "Consultation summary",
+      "date": "2025-06-19",
+      "episode": "Right ankle sprain",
+      "followUps": [
+        "Four further weekly sessions"
+      ]
+    },
+    {
+      "file": "07-supplement-review-note.pdf",
+      "type": "Consultation summary",
+      "date": "2025-09-02",
+      "episode": "Metabolic and nutrient optimization",
+      "medications": [
+        "Vitamin D3",
+        "Omega-3 fish oil",
+        "Magnesium glycinate",
+        "Zinc picolinate",
+        "Creatine monohydrate"
+      ]
+    }
+  ]
+}

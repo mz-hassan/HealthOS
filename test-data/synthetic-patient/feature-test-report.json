@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-06-20T17:44:56.678Z",
+  "database": {
+    "documents": 9,
+    "events": 35,
+    "episodes": 2,
+    "biomarkers": 21,
+    "interventions": 9,
+    "followups": 6
+  },
+  "dataQuality": {
+    "noFunctionalMetricsAsBiomarkers": true,
+    "adaptiveEpisodeMarkers": true,
+    "nonInjuryEpisodesAreDynamic": true,
+    "observationsCaptured": 8,
+    "allDocumentsAssigned": true,
+    "medicationSchedulesAvailable": true,
+    "adherenceAvailable": true,
+    "relationshipInsights": 5
+  },
+  "assistant": [
+    {
+      "name": "supplement-change",
+      "question": "What changed after I started Vitamin D, omega-3, zinc, magnesium and creatine? Be careful about causation.",
+      "mustInclude": [
+        "Vitamin D",
+        "triglycer",
+        "caus"
+      ],
+      "answer": "Based on your records, you initiated a regimen of Vitamin D3, Omega-3 fish oil, Zinc picolinate, Magnesium glycinate, and Creatine monohydrate on **2025-09-02** (as noted in the Harbor Preventive Health doctor note).\n\nBecause these supplements were started after several previous lab results, it is important to distinguish between **correlations** (changes that happened around the same time) and **causation** (changes directly caused by the supplements).\n\n### Observed Correlations\nThe following changes were noted in your laboratory values following the initiation of your supplement regimen:\n\n*   **Vitamin D (25-Hydroxy Vitamin D):** Your levels moved from a \"low\" status of **29 ng/mL (2025-04-15)** and **42 ng/mL (2025-08-20)** to a \"good\" status of **46 ng/mL (2025-12-05)** and **44 ng/mL (2026-03-12)**.\n*   **Zinc:** Your levels increased from **67 µg/dL (2025-01-10)** and **78 µg/dL (2025-04-15)** to **92 µg/dL (2025-08-20)** and **95 µg/dL (2025-12-05)**.\n*   **Triglycerides:** There is a downward trend from **180 mg/dL (2025-01-10)** to **82 mg/dL (2026-03-12)**.\n*   **hs-CRP (Inflammation marker):** Levels decreased from a \"high\" status of **3.2 mg/L (2025-01-10)** and **1.8 mg/L (2025-04-15)** to a \"good\" status of **0.6 mg/L (2026-03-12)**.\n*   **Creatinine and Creatine Kinase (CK):** A doctor's note from **2025-09-02** noted elevations in creatinine and CK following the initiation of creatine and intensive training. Specifically, CK was recorded at a \"high\" **420 U/L on 2025-08-20**, though it later returned to a \"good\" **190 U/L by 2025-12-05**.\n\n### Important Distinctions\n*   **Causation vs. Correlation:** While the improvements in Vitamin D and Zinc levels correlate with your supplement intake, the database does not provide clinical proof that the supplements were the sole cause. Other factors (such as diet or sunlight) could contribute.\n*   **Creatine and Training:** The elevation in Creatinine and CK is noted in your medical records as being associated with both **creatine initiation and intensive training**.\n*   **LDL Cholesterol:** While your LDL has improved (decreasing from **142 mg/dL on 2025-01-10** to **105 mg/dL on 2026-03-12**), it remains in the \"high\" status (range <100).\n\n**Note:** If you have concerns regarding the elevations in Creatinine or CK, or the persistent high LDL, you should seek a clinical review.",
+      "pass": true,
+      "missing": []
+    },
+    {
+      "name": "injury-episode",
+      "question": "Summarize my right ankle injury episode and recovery with dates and pain scores.",
+      "mustInclude": [
+        "ankle",
+        "2025",
+        "7/10",
+        "2/10"
+      ],
+      "answer": "### Right Ankle Injury Episode Summary\n\n**Diagnosis and Initial Presentation**\nOn **2025-06-05**, you were diagnosed with a **Grade II right lateral ankle sprain** following an inversion injury. Clinical notes from Dr. Priya Rao indicated tenderness over the ATFL and CFL, with a mildly positive anterior drawer test. An X-ray performed at that time showed no acute fracture or dislocation.\n\n**Pain and Symptom Progression**\n* **2025-06-05 (Initial Injury):** Pain was reported at a **7/10** level, specifically noted during weight-bearing. You were able to bear weight for only four steps with pain.\n* **2025-06-19 (Physiotherapy Follow-up):** Pain had reduced to a **2/10**. Minimal swelling was noted, and you were walking without a limp.\n\n**Recovery and Functional Status**\nAs of the physiotherapy progress note on **2025-06-19**, your recovery showed the following:\n* **Gait:** Improved (walking without a limp).\n* **Impairments:** Despite improved gait, you continued to exhibit a **dorsiflexion deficit (8 degrees less than the left side)** and impaired **single-leg balance (18 seconds on the right vs. 35 seconds on the left)**.\n\n**Management**\nYour treatment plan initiated on **2025-06-05** included:\n* **Medications:** Naproxen (250 mg twice daily), Pantoprazole (40 mg once daily), and Diclofenac gel (1% three times daily).\n* **Interventions:** RICE (Rest, Ice, Compression, Elevation), use of an ankle brace, and a referral to physiotherapy.\n\n**Open Follow-ups**\nThe following clinical actions remain open regarding this injury:\n* Clinical review for ankle sprain follow-up.\n* Supervised physiotherapy for rehabilitation after range-of-motion exercises.\n* Orthopaedic review if progress plateaus.",
+      "pass": true,
+      "missing": []
+    },
+    {
+      "name": "followups",
+      "question": "What follow-ups are still pending and which are most important?",
+      "mustInclude": [
+        "follow",
+        "CK",
+        "creatin"
+      ],
+      "answer": "Based on the provided database, there are several pending follow-ups categorized by their respective clinical episodes.\n\n### **Pending Follow-ups**\n\n**Metabolic and Nutrient Monitoring (Episode 1):**\n*   **Follow-up testing:** Review of laboratory results and lifestyle modification discussion (Status: Open).\n*   **Repeat laboratory testing:** Monitor mild ALT and CK elevation after 5-7 days without intense training (Status: Open).\n*   **Repeat CMP, creatinine/eGFR, CK, fasting lipids, Vitamin D and zinc:** Monitoring after creatine initiation and intensive training (Status: Open).\n\n**Grade II Right Lateral Ankle Sprain (Episode 2):**\n*   **Clinical review:** Follow-up for ankle sprain (Status: Open).\n*   **Supervised physiotherapy:** Rehabilitation after range-of-motion exercises (Status: Open).\n*   **Orthopaedic review:** To be conducted if progress plateaus (Status: Open).\n\n---\n\n### **Priority Assessment**\n\nDetermining which follow-up is \"most important\" requires clinical judgment from a healthcare provider. However, based on the documented medical history, the following areas involve active monitoring of physiological changes:\n\n1.  **Metabolic Monitoring (High Priority for Clinical Review):**\n    *   The database notes a need to monitor **Alanine Aminotransferase (ALT)** and **Creatine Kinase (CK)**. Specifically, ALT was recorded as \"high\" (47 U/L) on 2025-08-20, and CK was \"high\" (420 U/L) on 2025-08-20. \n    *   A doctor's note from 2025-09-02 explicitly linked these elevations to creatine initiation and intensive training, recommending follow-up testing.\n    *   **LDL Cholesterol** also remains \"high\" (105 mg/dL as of 2026-03-12), which is flagged in the insights as deserving continued monitoring.\n\n2.  **Ankle Rehabilitation (Ongoing Priority):**\n    *   The ankle sprain episode involves active physiotherapy and potential orthopaedic review if progress plateaus.\n\n**Note:** If you are experiencing new or worsening symptoms related to these markers (such as muscle pain or changes in urination), you should seek an **urgent clinical review**.",
+      "pass": true,
+      "missing": []
+    }
+  ],
+  "doctorBrief": {
+    "pass": true,
+    "length": 2066,
+    "brief": "**Clinician Appointment Brief**\n\n**Reason for Visit**\n*   Metabolic and nutrient monitoring (ongoing management of dyslipidemia and glycemic markers).\n*   Follow-up regarding Grade II right lateral ankle sprain (rehabilitation progress).\n\n**Symptom/Recovery Timeline**\n*   **Ankle Sprain (June 2025):** Initially presented with 7/10 pain and limited weight-bearing (4 steps). As of June 19, 2025, pain reduced to 2/10, gait improved (no limp), and swelling is minimal.\n*   **Metabolic Trends:** Long-term monitoring of Vitamin D, HbA1c, and lipids since January 2025.\n\n**Abnormal or Worsening Findings**\n*   **LDL Cholesterol:** Persistently high; most recent value 105 mg/dL (Range: <100).\n*   **Ferritin:** Recent downward trend (39 ng/mL on 2026-03-12 vs. 44 ng/mL on 2025-08-20).\n*   **Ankle Deficits (as of June 2025):** Impaired dorsiflexion (8° deficit) and single-leg balance (18s vs 35s on left).\n*   *Note: Previous elevations in ALT and CK (August 2025) have since normalized.*\n\n**Active Medications and Supplements**\n*   **Medications:** Naproxen (250 mg BID), Pantoprazole (40 mg daily), Diclofenac gel (1% TID).\n*   **Supplements:** Vitamin D3 (2,000 IU daily), Omega-3 fish oil (1,000 mg daily), Magnesium glycinate (200 mg nightly), Zinc picolinate (15 mg daily), Creatine monohydrate (5 g daily).\n\n**Outstanding Follow-ups**\n*   Review of laboratory results and lifestyle modification discussion.\n*   Supervised physiotherapy for ankle rehabilitation.\n*   Orthopaedic review if ankle progress plateaus.\n*   Repeat laboratory testing (monitoring CK/creatinine/lipids/nutrients).\n\n**Red Flags to Mention**\n*   Changes in ankle stability or sudden inability to bear weight.\n*   New metabolic symptoms (e.g., extreme fatigue, brain fog, or excessive thirst).\n\n**Focused Questions**\n*   **Ankle:** How is your current pain intensity (1–5), swelling level (1–5), and overall mobility/weight-bearing ability (1–5)?\n*   **Metabolic:** How would you rate your daily energy levels, appetite stability, and any presence of metabolic symptoms (fatigue, thirst)?"
+  }
+}

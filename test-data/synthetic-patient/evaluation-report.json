@@ -1,0 +1,458 @@
+{
+  "generatedAt": "2026-06-20T16:02:19.341Z",
+  "corpus": {
+    "pdfs": 9,
+    "interventions": 6
+  },
+  "ingestion": {
+    "successful": 9,
+    "total": 9,
+    "averageMs": 4938,
+    "details": [
+      {
+        "filename": "01-baseline-lab-grid.pdf",
+        "durationMs": 7946,
+        "id": 1,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Blood report",
+          "date": "2025-01-10",
+          "biomarkers": 17,
+          "followUps": 1,
+          "episode": {
+            "action": "new",
+            "episodeId": null,
+            "title": "Metabolic and Nutrient Monitoring",
+            "type": "monitoring",
+            "confidence": 0.9,
+            "rationale": "The blood report identifies multiple metabolic concerns (dyslipidemia, glycemic markers) and nutrient deficiencies (Vitamin D) that align with the subsequent supplement interventions (Vitamin D3, Magnesium, Zinc) seen in recent events."
+          }
+        }
+      },
+      {
+        "filename": "02-april-lab-two-column.pdf",
+        "durationMs": 4683,
+        "id": 2,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Blood report",
+          "date": "2025-04-15",
+          "biomarkers": 12,
+          "followUps": 0,
+          "episode": {
+            "action": "existing",
+            "episodeId": 1,
+            "title": "Metabolic and Nutrient Monitoring",
+            "type": "monitoring",
+            "confidence": 1,
+            "rationale": "The blood report tracks the same metabolic markers (LDL, Vitamin D, hs-CRP) and nutrient levels addressed in the existing monitoring episode."
+          }
+        }
+      },
+      {
+        "filename": "03-ankle-injury-consultation.pdf",
+        "durationMs": 4726,
+        "id": 3,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Consultation summary",
+          "date": "2025-06-05",
+          "biomarkers": 0,
+          "followUps": 2,
+          "episode": {
+            "action": "new",
+            "episodeId": null,
+            "title": "Grade II right lateral ankle sprain",
+            "type": "injury",
+            "confidence": 1,
+            "rationale": "The document describes a new acute injury (ankle sprain) involving diagnosis, imaging (X-ray), and planned physiotherapy, which warrants a new injury episode."
+          }
+        }
+      },
+      {
+        "filename": "04-ankle-injury-prescription.pdf",
+        "durationMs": 3281,
+        "id": 4,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Prescription",
+          "date": "2025-06-05",
+          "biomarkers": 0,
+          "followUps": 2,
+          "episode": {
+            "action": "existing",
+            "episodeId": 2,
+            "title": "Grade II right lateral ankle sprain",
+            "type": "injury",
+            "confidence": 1,
+            "rationale": "The prescription is for medications (Naproxen, Diclofenac) and management (brace, physiotherapy) specifically for the Grade II right lateral ankle sprain identified in the existing injury episode."
+          }
+        }
+      },
+      {
+        "filename": "05-ankle-followup-physio.pdf",
+        "durationMs": 3506,
+        "id": 5,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Doctor note",
+          "date": "2025-06-19",
+          "biomarkers": 0,
+          "followUps": 2,
+          "episode": {
+            "action": "existing",
+            "episodeId": 2,
+            "title": "Grade II right lateral ankle sprain",
+            "type": "injury",
+            "confidence": 1,
+            "rationale": "The document is a physiotherapy progress note for the same right ankle inversion injury/sprain previously diagnosed and managed."
+          }
+        }
+      },
+      {
+        "filename": "06-august-lab-dense.pdf",
+        "durationMs": 7460,
+        "id": 6,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Blood report",
+          "date": "2025-08-20",
+          "biomarkers": 21,
+          "followUps": 1,
+          "episode": {
+            "action": "existing",
+            "episodeId": 1,
+            "title": "Metabolic and Nutrient Monitoring",
+            "type": "monitoring",
+            "confidence": 1,
+            "rationale": "The blood report tracks metabolic markers (LDL-C, glucose) and nutrient levels (Vitamin D, Zinc, Magnesium) that directly relate to the existing metabolic monitoring episode."
+          }
+        }
+      },
+      {
+        "filename": "07-supplement-review-note.pdf",
+        "durationMs": 3678,
+        "id": 7,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Doctor note",
+          "date": "2025-09-02",
+          "biomarkers": 0,
+          "followUps": 1,
+          "episode": {
+            "action": "existing",
+            "episodeId": 1,
+            "title": "Metabolic and Nutrient Monitoring",
+            "type": "monitoring",
+            "confidence": 1,
+            "rationale": "The document is a nutrition and supplement review discussing Vitamin D, Zinc, Magnesium, and metabolic markers (triglycerides, hs-CRP), which directly aligns with the existing Metabolic and Nutrient Monitoring episode."
+          }
+        }
+      },
+      {
+        "filename": "08-december-lab-compact.pdf",
+        "durationMs": 4993,
+        "id": 8,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Blood report",
+          "date": "2025-12-05",
+          "biomarkers": 13,
+          "followUps": 0,
+          "episode": {
+            "action": "existing",
+            "episodeId": 1,
+            "title": "Metabolic and Nutrient Monitoring",
+            "type": "monitoring",
+            "confidence": 1,
+            "rationale": "The blood report tracks the same metabolic markers (LDL, Vitamin D, Zinc, Magnesium) and nutrient goals established in the existing monitoring episode."
+          }
+        }
+      },
+      {
+        "filename": "09-march-lab-scanned-image.pdf",
+        "durationMs": 4166,
+        "id": 9,
+        "status": "organized",
+        "extracted": {
+          "documentType": "Blood report",
+          "date": "2026-03-12",
+          "biomarkers": 9,
+          "followUps": 0,
+          "episode": {
+            "action": "existing",
+            "episodeId": 1,
+            "title": "Metabolic and Nutrient Monitoring",
+            "type": "monitoring",
+            "confidence": 1,
+            "rationale": "The blood report tracks metabolic markers (LDL cholesterol, HbA1c, triglycerides) and nutrient levels (Vitamin D) that are part of the ongoing metabolic and nutrient monitoring episode."
+          }
+        }
+      }
+    ]
+  },
+  "extraction": {
+    "measurementRecall": 1,
+    "matchedMeasurements": 72,
+    "expectedMeasurements": 72,
+    "misses": [],
+    "typeAccuracy": 1,
+    "typeChecks": [
+      {
+        "file": "01-baseline-lab-grid.pdf",
+        "expected": "Blood report",
+        "actual": "Blood report",
+        "pass": true
+      },
+      {
+        "file": "02-april-lab-two-column.pdf",
+        "expected": "Blood report",
+        "actual": "Blood report",
+        "pass": true
+      },
+      {
+        "file": "06-august-lab-dense.pdf",
+        "expected": "Blood report",
+        "actual": "Blood report",
+        "pass": true
+      },
+      {
+        "file": "08-december-lab-compact.pdf",
+        "expected": "Blood report",
+        "actual": "Blood report",
+        "pass": true
+      },
+      {
+        "file": "09-march-lab-scanned-image.pdf",
+        "expected": "Blood report",
+        "actual": "Blood report",
+        "pass": true
+      },
+      {
+        "file": "03-ankle-injury-consultation.pdf",
+        "expected": "Doctor note",
+        "actual": "Consultation summary",
+        "pass": true
+      },
+      {
+        "file": "04-ankle-injury-prescription.pdf",
+        "expected": "Prescription",
+        "actual": "Prescription",
+        "pass": true
+      },
+      {
+        "file": "05-ankle-followup-physio.pdf",
+        "expected": "Consultation summary",
+        "actual": "Doctor note",
+        "pass": true
+      },
+      {
+        "file": "07-supplement-review-note.pdf",
+        "expected": "Consultation summary",
+        "actual": "Doctor note",
+        "pass": true
+      }
+    ]
+  },
+  "episodes": {
+    "labDocumentsShareEpisode": true,
+    "labEpisodeIds": [
+      1
+    ],
+    "injuryDocumentsShareEpisode": true,
+    "injuryEpisodeIds": [
+      2
+    ],
+    "clusters": [
+      {
+        "id": 2,
+        "title": "Grade II right lateral ankle sprain",
+        "type": "injury",
+        "startDate": "2025-06-05",
+        "endDate": null,
+        "status": "active",
+        "summary": "The document describes a new acute injury (ankle sprain) involving diagnosis, imaging (X-ray), and planned physiotherapy, which warrants a new injury episode.",
+        "markerSchemaJson": "[{\"key\":\"pain_intensity\",\"label\":\"Pain Intensity\",\"question\":\"On a scale of 1 to 5, how intense is your ankle pain today? (1 = minimal, 5 = severe)\",\"direction\":\"higher_worse\",\"lowAnchor\":\"minimal pain\",\"highAnchor\":\"severe pain\"},{\"key\":\"swelling_level\",\"label\":\"Swelling Level\",\"question\":\"On a scale of 1 to 5, how much swelling is present in your ankle? (1 = no swelling, 5 = extreme swelling)\",\"direction\":\"higher_worse\",\"lowAnchor\":\"no swelling\",\"highAnchor\":\"extreme swelling\"},{\"key\":\"mobility_function\",\"label\":\"Mobility Function\",\"question\":\"On a scale of 1 to 5, how well can you move and bear weight on your ankle? (1 = very difficult, 5 = easy/normal)\",\"direction\":\"higher_better\",\"lowAnchor\":\"very limited\",\"highAnchor\":\"full mobility\"}]",
+        "documentCount": 3,
+        "markerSchema": [
+          {
+            "key": "pain_intensity",
+            "label": "Pain Intensity",
+            "question": "On a scale of 1 to 5, how intense is your ankle pain today? (1 = minimal, 5 = severe)",
+            "direction": "higher_worse",
+            "lowAnchor": "minimal pain",
+            "highAnchor": "severe pain"
+          },
+          {
+            "key": "swelling_level",
+            "label": "Swelling Level",
+            "question": "On a scale of 1 to 5, how much swelling is present in your ankle? (1 = no swelling, 5 = extreme swelling)",
+            "direction": "higher_worse",
+            "lowAnchor": "no swelling",
+            "highAnchor": "extreme swelling"
+          },
+          {
+            "key": "mobility_function",
+            "label": "Mobility Function",
+            "question": "On a scale of 1 to 5, how well can you move and bear weight on your ankle? (1 = very difficult, 5 = easy/normal)",
+            "direction": "higher_better",
+            "lowAnchor": "very limited",
+            "highAnchor": "full mobility"
+          }
+        ],
+        "checkins": [],
+        "linkedDocuments": [
+          {
+            "id": 5,
+            "filename": "05-ankle-followup-physio.pdf",
+            "documentType": "Doctor note",
+            "summary": "Physiotherapy progress note for Alex Morgan following a right ankle inversion injury. Patient reports reduced pain and minimal swelling with improved gait, though dorsiflexion and single-leg balance remain impaired compared to the left side.",
+            "hasFile": 1
+          },
+          {
+            "id": 3,
+            "filename": "03-ankle-injury-consultation.pdf",
+            "documentType": "Consultation summary",
+            "summary": "Patient presents with a Grade II right lateral ankle sprain following an inversion injury. X-ray shows no acute fracture or dislocation. Management includes RICE, bracing, and physiotherapy.",
+            "hasFile": 1
+          },
+          {
+            "id": 4,
+            "filename": "04-ankle-injury-prescription.pdf",
+            "documentType": "Prescription",
+            "summary": "Prescription for Grade II right lateral ankle sprain including Naproxen, Pantoprazole, and Diclofenac gel, with instructions for ankle brace use and physiotherapy referral.",
+            "hasFile": 1
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "title": "Metabolic and Nutrient Monitoring",
+        "type": "monitoring",
+        "startDate": "2025-01-10",
+        "endDate": null,
+        "status": "active",
+        "summary": "The blood report identifies multiple metabolic concerns (dyslipidemia, glycemic markers) and nutrient deficiencies (Vitamin D) that align with the subsequent supplement interventions (Vitamin D3, Magnesium, Zinc) seen in recent events.",
+        "markerSchemaJson": "[{\"key\":\"energy_levels\",\"label\":\"Daily Energy Levels\",\"question\":\"How would you rate your overall energy levels today?\",\"direction\":\"higher_better\",\"lowAnchor\":\"Very low/Exhausted\",\"highAnchor\":\"Very high/Vibrant\"},{\"key\":\"hunger_stability\",\"label\":\"Appetite Stability\",\"question\":\"How stable has your appetite and blood sugar-related hunger been today?\",\"direction\":\"higher_better\",\"lowAnchor\":\"Very unstable/Frequent cravings\",\"highAnchor\":\"Very stable/Consistent\"},{\"key\":\"symptom_burden\",\"label\":\"Metabolic Symptom Burden\",\"question\":\"How much have metabolic symptoms (e.g., fatigue, brain fog, thirst) affected you today?\",\"direction\":\"higher_worse\",\"lowAnchor\":\"No symptoms\",\"highAnchor\":\"Severe symptoms\"}]",
+        "documentCount": 6,
+        "markerSchema": [
+          {
+            "key": "energy_levels",
+            "label": "Daily Energy Levels",
+            "question": "How would you rate your overall energy levels today?",
+            "direction": "higher_better",
+            "lowAnchor": "Very low/Exhausted",
+            "highAnchor": "Very high/Vibrant"
+          },
+          {
+            "key": "hunger_stability",
+            "label": "Appetite Stability",
+            "question": "How stable has your appetite and blood sugar-related hunger been today?",
+            "direction": "higher_better",
+            "lowAnchor": "Very unstable/Frequent cravings",
+            "highAnchor": "Very stable/Consistent"
+          },
+          {
+            "key": "symptom_burden",
+            "label": "Metabolic Symptom Burden",
+            "question": "How much have metabolic symptoms (e.g., fatigue, brain fog, thirst) affected you today?",
+            "direction": "higher_worse",
+            "lowAnchor": "No symptoms",
+            "highAnchor": "Severe symptoms"
+          }
+        ],
+        "checkins": [],
+        "linkedDocuments": [
+          {
+            "id": 9,
+            "filename": "09-march-lab-scanned-image.pdf",
+            "documentType": "Blood report",
+            "summary": "Comprehensive blood panel showing normal Vitamin D, HbA1c, HDL, Triglycerides, Ferritin, Creatinine, eGFR, and hs-CRP, with elevated LDL cholesterol.",
+            "hasFile": 1
+          },
+          {
+            "id": 8,
+            "filename": "08-december-lab-compact.pdf",
+            "documentType": "Blood report",
+            "summary": "Comprehensive laboratory report for Alex Morgan showing normal levels for Vitamin D, HbA1c, glucose, lipids (except LDL), liver enzymes, renal function, and electrolytes, with a high LDL cholesterol level.",
+            "hasFile": 1
+          },
+          {
+            "id": 7,
+            "filename": "07-supplement-review-note.pdf",
+            "documentType": "Doctor note",
+            "summary": "Nutrition and supplement review for Alex Morgan. Patient reports a regimen of Vitamin D3, Omega-3, Magnesium glycinate, Zinc picolinate, and Creatine monohydrate. Review notes improvements in Vitamin D, triglycerides, hs-CRP, and zinc levels. Noted elevations in creatinine and CK following creatine initiation and intensive training; hydration and follow-up testing discussed.",
+            "hasFile": 1
+          },
+          {
+            "id": 6,
+            "filename": "06-august-lab-dense.pdf",
+            "documentType": "Blood report",
+            "summary": "Comprehensive laboratory report showing mild elevations in LDL-C, Alanine Aminotransferase (ALT), and Creatine Kinase (CK).",
+            "hasFile": 1
+          },
+          {
+            "id": 2,
+            "filename": "02-april-lab-two-column.pdf",
+            "documentType": "Blood report",
+            "summary": "Comprehensive laboratory report for Alex Morgan showing low Vitamin D, high LDL-C, and high High Sensitivity CRP.",
+            "hasFile": 1
+          },
+          {
+            "id": 1,
+            "filename": "01-baseline-lab-grid.pdf",
+            "documentType": "Blood report",
+            "summary": "Laboratory report showing low Vitamin D, elevated HbA1c, fasting glucose, total cholesterol, LDL cholesterol, triglycerides, and hs-CRP. Dyslipidemia and borderline glycemic markers noted.",
+            "hasFile": 1
+          }
+        ]
+      }
+    ]
+  },
+  "product": {
+    "documents": 9,
+    "biomarkers": 21,
+    "events": 35,
+    "followups": 6,
+    "interventions": 9,
+    "insights": 11,
+    "adherence": [
+      {
+        "name": "Naproxen",
+        "adherence7d": null
+      },
+      {
+        "name": "Pantoprazole",
+        "adherence7d": null
+      },
+      {
+        "name": "Diclofenac gel",
+        "adherence7d": null
+      },
+      {
+        "name": "Creatine monohydrate",
+        "adherence7d": 86
+      },
+      {
+        "name": "Strength training",
+        "adherence7d": 67
+      },
+      {
+        "name": "Magnesium glycinate",
+        "adherence7d": 71
+      },
+      {
+        "name": "Zinc picolinate",
+        "adherence7d": 57
+      },
+      {
+        "name": "Vitamin D3",
+        "adherence7d": 86
+      },
+      {
+        "name": "Omega-3 fish oil",
+        "adherence7d": 86
+      }
+    ]
+  }
+}
