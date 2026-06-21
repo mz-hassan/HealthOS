@@ -7,6 +7,7 @@ import {
   Bell,
   Brain,
   CalendarClock,
+  Camera,
   Check,
   ChevronDown,
   ClipboardPlus,
@@ -33,6 +34,7 @@ import {
   Sun,
   Moon,
   Upload,
+  Utensils,
   X,
   Zap,
 } from "lucide-react";
@@ -55,6 +57,7 @@ const overlaySet = new Set([
   "profile",
   "menu",
   "checkin",
+  "food",
 ] as const);
 const elderPanelSet = new Set(["medications", "appointments", "chat"] as const);
 
@@ -66,6 +69,7 @@ type OverlayState =
   | "profile"
   | "menu"
   | "checkin"
+  | "food"
   | null;
 type ElderPanelState = "medications" | "appointments" | "chat" | null;
 type ThemeMode = "light" | "dark";
@@ -78,6 +82,8 @@ type Marker = {
   range: string;
   delta: number | null;
   points: { date: string; value: number; status?: string; range?: string }[];
+  episodeId?: number | null;
+  episodeTitle?: string | null;
 };
 type BiomarkerInsight = {
   name: string;
@@ -142,6 +148,8 @@ type DocumentItem = {
   episodeConfidence?: number;
   hasFile?: number;
   mimeType?: string;
+  instructions?: string[];
+  actionItems?: Array<{ title: string; detail?: string; dueDate?: string; type: string }>;
 };
 type Intervention = {
   id: number;
@@ -172,6 +180,7 @@ type Intervention = {
     timeLabel: string;
   }>;
   todaysTaken?: boolean;
+  takenSlots?: string[];
 };
 type Checkin = {
   id: number;
@@ -194,8 +203,16 @@ type Episode = {
   status: "active" | "monitoring" | "closed"; summary: string; documentCount: number;
   markerSchema: EpisodeMarkerDef[];
   checkins: Checkin[]; linkedDocuments: Array<Pick<DocumentItem, "id" | "filename" | "documentType" | "summary" | "hasFile">>;
+  appointments?: Followup[];
+  actions?: ActionItem[];
+  medicines?: Intervention[];
+  biomarkers?: Marker[];
 };
 type Insight = { tone: string; eyebrow: string; title: string; text: string };
+type ActionItem = { id: number; type: string; title: string; detail?: string | null; dueDate?: string | null; status: string; documentId?: number; filename?: string; episodeId?: number; episodeTitle?: string };
+type FoodEntry = { id: number; eatenAt: string; mealType?: string; summary: string; episodeId?: number; episodeTitle?: string; assessment: { protein?: string; carbBalance?: string; fatBalance?: string; fiber?: string; processedOrSugary?: boolean; hydrationCue?: string; observations?: string[] } };
+type MissedDose = { id: string; interventionId: number; medicine: string; dose?: string; date: string; slotKey: string; slotLabel: string; timeLabel: string; episodeTitle?: string; severity: "missed" | "due"; status: string };
+type RiskFlag = { id: string; title: string; observation: string; episodeTitles: string[]; severity: string };
 type Dashboard = {
   profiles: Profile[];
   currentProfileId: number;
@@ -210,6 +227,12 @@ type Dashboard = {
   insights: Insight[];
   reminders: Reminder[];
   nextReminder: Reminder | null;
+  actions: ActionItem[];
+  foodEntries: FoodEntry[];
+  foodTrends: string[];
+  riskFlags: RiskFlag[];
+  missedDoses: MissedDose[];
+  digest: { period: string; newDocuments: DocumentItem[]; abnormalLabs: Marker[]; missedMedicines: MissedDose[]; upcomingAppointments: Reminder[]; foodPatterns: string[]; worseningCheckins: Array<Checkin & { episodeTitle: string }> };
   counts: {
     documents: number;
     biomarkers: number;
@@ -229,6 +252,8 @@ const emptyData: Dashboard = {
   insights: [],
   reminders: [],
   nextReminder: null,
+  actions: [], foodEntries: [], foodTrends: [], riskFlags: [], missedDoses: [],
+  digest: { period: "Last 7 days", newDocuments: [], abnormalLabs: [], missedMedicines: [], upcomingAppointments: [], foodPatterns: [], worseningCheckins: [] },
   counts: { documents: 0, biomarkers: 0, interventions: 0, followups: 0 },
   episodes: [],
 };
@@ -239,6 +264,7 @@ const iconMap: Record<string, typeof Activity> = {
   intervention: Zap,
   medication: ClipboardPlus,
   diagnosis: HeartPulse,
+  food: Utensils,
 };
 
 let activeProfileId: number | null = null;
@@ -585,10 +611,12 @@ function UploadModal({
   close,
   onComplete,
   simpleFlow = false,
+  episodes = [],
 }: {
   close: () => void;
   onComplete: () => Promise<void>;
   simpleFlow?: boolean;
+  episodes?: Episode[];
 }) {
   const input = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
@@ -597,6 +625,7 @@ function UploadModal({
     "idle",
   );
   const [message, setMessage] = useState("");
+  const [episodeId, setEpisodeId] = useState("");
   const add = (list: FileList | null) =>
     list &&
     setFiles((current) => [...current, ...Array.from(list)]);
@@ -605,6 +634,7 @@ function UploadModal({
     setMessage("LiteParse is reading layout and tables…");
     const body = new FormData();
     files.forEach((f) => body.append("documents", f));
+    if (episodeId) body.append("episodeId", episodeId);
     if (simpleFlow && files.length > 1 && files.every((file) => file.type.startsWith("image/")))
       body.append("mergePages", "1");
     try {
@@ -655,6 +685,16 @@ function UploadModal({
             ? "Take one page at a time, then submit the full stack together as one report. Files are parsed locally with LiteParse and structured with Gemma."
             : "Files are parsed locally with LiteParse. Extracted text is sent securely to Gemma for medical structuring."}
         </p>
+        {!simpleFlow && episodes.length > 0 && state !== "done" && (
+          <label className="upload-track-picker">
+            <span>Care track <small>Optional</small></span>
+            <select value={episodeId} onChange={(event) => setEpisodeId(event.target.value)}>
+              <option value="">Detect automatically</option>
+              {episodes.map((episode) => <option value={episode.id} key={episode.id}>{episode.title}</option>)}
+            </select>
+            <small>Choose one when you know the thread of care. You can reassign it later.</small>
+          </label>
+        )}
         {state === "done" ? (
           <div className="success-state">
             <span>
@@ -756,6 +796,33 @@ function UploadModal({
       </div>
     </div>
   );
+}
+
+function FoodModal({ close, onComplete, episodes = [], simpleFlow = false }: { close: () => void; onComplete: () => Promise<void>; episodes?: Episode[]; simpleFlow?: boolean }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [episodeId, setEpisodeId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async () => {
+    if (!photo) return;
+    setBusy(true); setError("");
+    const body = new FormData(); body.append("photo", photo); body.append("eatenAt", new Date().toISOString());
+    if (episodeId) body.append("episodeId", episodeId);
+    try { await api("/api/food", { method: "POST", body }); await onComplete(); close(); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "Could not assess this meal."); }
+    finally { setBusy(false); }
+  };
+  return <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && close()}><div className="modal meal-modal">
+    <button aria-label="Close food capture" className="icon-btn modal-x" onClick={close}><X size={18}/></button>
+    <div className="modal-icon"><Utensils size={22}/></div><h2>{simpleFlow ? "Take a food photo" : "Add a meal"}</h2>
+    <p>Health OS assesses visible protein, carbohydrate and fat balance, fiber, processing signals, and hydration cues—without calorie counting.</p>
+    <button className="meal-photo-picker" onClick={() => input.current?.click()}>{photo ? <><Check size={24}/><b>{photo.name}</b><small>Ready to assess</small></> : <><Camera size={28}/><b>Take or choose a meal photo</b><small>JPG or PNG</small></>}</button>
+    <input ref={input} hidden type="file" accept="image/*" capture="environment" onChange={(event) => setPhoto(event.target.files?.[0] || null)}/>
+    {!simpleFlow && episodes.length > 0 && <label><span>Link to care track <small>Optional</small></span><select value={episodeId} onChange={(event) => setEpisodeId(event.target.value)}><option value="">General health</option>{episodes.map((episode) => <option value={episode.id} key={episode.id}>{episode.title}</option>)}</select></label>}
+    {error && <div className="form-error"><AlertCircle size={16}/>{error}</div>}
+    <div className="modal-actions"><button className="btn ghost" onClick={close}>Cancel</button><button className="btn primary" disabled={!photo || busy} onClick={submit}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>}Assess meal</button></div>
+  </div></div>;
 }
 
 function InterventionModal({
@@ -1075,15 +1142,17 @@ function AddProfileModal({
 function Assistant({
   close,
   hasData,
+  episode,
 }: {
   close: () => void;
   hasData: boolean;
+  episode?: Episode | null;
 }) {
   const [messages, setMessages] = useState([
     {
       role: "ai",
       text: hasData
-        ? "I’m connected to your stored records, biomarkers, interventions, and follow-ups. What should we explore?"
+        ? episode ? `I’m focused on ${episode.title} first, with the rest of the shared record available when relevant. What should we explore?` : "I’m connected to your stored records, biomarkers, interventions, and follow-ups. What should we explore?"
         : "Your health memory is empty. Upload a record or add an intervention, then I can reason across it.",
     },
   ]);
@@ -1099,7 +1168,7 @@ function Assistant({
       const d = await api<{ answer: string }>("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: q, episodeId: episode?.id || null }),
       });
       setMessages((m) => [...m, { role: "ai", text: d.answer }]);
     } catch (e) {
@@ -1340,6 +1409,7 @@ function ElderDashboard({
   data,
   currentProfile,
   openUpload,
+  openFood,
   logTaken,
   activePanel,
   onPanelChange,
@@ -1349,7 +1419,8 @@ function ElderDashboard({
   data: Dashboard;
   currentProfile?: Profile;
   openUpload: () => void;
-  logTaken: (intervention: Intervention) => Promise<void>;
+  logTaken: (intervention: Intervention, slotKey?: string) => Promise<void>;
+  openFood: () => void;
   activePanel: ElderPanelState;
   onPanelChange: (panel: ElderPanelState) => void;
   theme: ThemeMode;
@@ -1357,18 +1428,17 @@ function ElderDashboard({
 }) {
   const period = currentMedicationPeriod();
   const activeMedications = data.interventions.filter(
-    (item) => item.status === "active",
+    (item) => item.status === "active" && /medication|medicine|supplement/i.test(item.type),
   );
-  const dueNow = data.interventions.filter(
+  const dueNow = activeMedications.filter(
     (item) =>
-      item.status === "active" &&
       !item.todaysTaken &&
       item.scheduleSlots?.some(
         (slot) => slot.period === period || slot.period === "anytime",
       ),
   );
-  const upcoming = data.interventions.filter(
-    (item) => item.status === "active" && !item.todaysTaken && !dueNow.includes(item),
+  const upcoming = activeMedications.filter(
+    (item) => !item.todaysTaken && !dueNow.includes(item),
   );
   const compactMedications = [
     ...dueNow,
@@ -1449,8 +1519,8 @@ function ElderDashboard({
                             </div>
                             <button
                               className={`btn ${item.todaysTaken ? "ghost" : "primary"} elder-med-check`}
-                              onClick={() => logTaken(item)}
-                              disabled={item.todaysTaken}
+                              onClick={() => logTaken(item, item.scheduleSlots.find((slot) => slot.period === group.slot)?.key)}
+                              disabled={item.takenSlots?.includes(item.scheduleSlots.find((slot) => slot.period === group.slot)?.key || "")}
                             >
                               <Check size={16} />
                             </button>
@@ -1560,7 +1630,7 @@ function ElderDashboard({
                       </div>
                       <button
                         className={`btn ${item.todaysTaken ? "ghost" : "primary"} elder-med-check`}
-                        onClick={() => logTaken(item)}
+                        onClick={() => logTaken(item, item.scheduleSlots.find((slot) => slot.period === period)?.key || item.scheduleSlots[0]?.key)}
                         disabled={item.todaysTaken}
                       >
                         <Check size={14} />
@@ -1579,10 +1649,9 @@ function ElderDashboard({
             <article className="elder-widget elder-food card">
               <p className="eyebrow">FOOD</p>
               <h2>Capture food</h2>
-              {/* TODO: Replace this placeholder with meal-photo ingestion and nutrition tracking. */}
-              <p>Take a meal photo for diet tracking. This is a placeholder for the next build.</p>
-              <button className="btn ghost elder-widget-btn" disabled>
-                <FileHeart size={18} /> Coming soon
+              <p>Take a quick meal photo. Your caregiver will see the same entry and simple nutrition balance.</p>
+              <button className="btn ghost elder-widget-btn" onClick={openFood}>
+                <Camera size={18} /> Take food photo
               </button>
             </article>
           </section>
@@ -1719,6 +1788,14 @@ function Overview({
           </div>
         </section>
       )}
+      {(data.missedDoses.length > 0 || data.actions.length > 0) && <section className="care-alert-grid">
+        {data.missedDoses.length > 0 && <article className="card escalation-card"><header><span><AlertCircle size={19}/></span><div><p className="eyebrow">MEDICINE FOLLOW-UP</p><h3>{data.missedDoses.length} missed or unlogged dose{data.missedDoses.length === 1 ? "" : "s"}</h3></div></header>{data.missedDoses.slice(0, 4).map((dose) => <div className="action-row" key={dose.id}><div><b>{dose.medicine}</b><small>{prettyDate(dose.date)} · {dose.slotLabel} · {dose.timeLabel}{dose.episodeTitle ? ` · ${dose.episodeTitle}` : ""}</small></div><span className={`status-chip ${dose.severity}`}>{dose.status === "unlogged" ? "Unlogged" : dose.status}</span></div>)}</article>}
+        {data.actions.length > 0 && <article className="card action-card"><header><span><Zap size={19}/></span><div><p className="eyebrow">FROM NEW RECORDS</p><h3>Actions found in documents</h3></div></header>{data.actions.slice(0, 4).map((action) => <div className="action-row" key={action.id}><div><b>{action.title}</b><small>{[action.episodeTitle, action.filename, action.dueDate ? prettyDate(action.dueDate) : null].filter(Boolean).join(" · ")}</small></div><span className="type-label">{action.type}</span></div>)}</article>}
+      </section>}
+      <section className="card digest-card"><header><div><p className="eyebrow">CAREGIVER DIGEST · {data.digest.period.toUpperCase()}</p><h2>What changed</h2></div><span className="tag">In-app digest</span></header><div className="digest-grid">
+        <div><b>{data.digest.newDocuments.length}</b><span>new documents</span></div><div><b>{data.digest.abnormalLabs.length}</b><span>abnormal labs</span></div><div><b>{data.digest.missedMedicines.length}</b><span>medicine alerts</span></div><div><b>{data.digest.upcomingAppointments.length}</b><span>appointments</span></div><div><b>{data.digest.foodPatterns.length}</b><span>food patterns</span></div><div><b>{data.digest.worseningCheckins.length}</b><span>worsening check-ins</span></div>
+      </div>{data.digest.foodPatterns.map((pattern) => <p className="digest-note" key={pattern}>{pattern}</p>)}</section>
+      {data.riskFlags.length > 0 && <section className="risk-section"><div className="section-title"><div><p className="eyebrow">CROSS-TRACK OBSERVATIONS</p><h2>Patterns to review</h2></div></div><div className="insight-grid">{data.riskFlags.map((flag) => <article className="insight-card warning" key={flag.id}><AlertCircle/><p className="eyebrow">NON-DIAGNOSTIC OBSERVATION</p><h3>{flag.title}</h3><p>{flag.observation}</p>{flag.episodeTitles.length > 0 && <small>{flag.episodeTitles.join(" · ")}</small>}</article>)}</div></section>}
       <div className="section-title">
         <div>
           <p className="eyebrow">BIOMARKERS</p>
@@ -1952,11 +2029,13 @@ function TimelinePage({ events }: { events: EventItem[] }) {
   );
 }
 
-function EventsPage({ episodes, openEvent, openCheckin, refresh, prepare }: {
+function EventsPage({ episodes, openEvent, openCheckin, refresh, prepare, ask }: {
   episodes: Episode[]; openEvent: () => void; openCheckin: (episode: Episode) => void;
   refresh: () => Promise<void>; prepare: (episode: Episode) => void;
+  ask: (episode: Episode) => void;
 }) {
   const [filter,setFilter]=useState("active");
+  const [documentEpisode,setDocumentEpisode]=useState<Episode|null>(null);
   const visible=episodes.filter(e=>filter==="all"||e.status===filter);
   const changeState=async(episode:Episode,status:Episode["status"])=>{
     await api(`/api/episodes/${episode.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})}); await refresh();
@@ -1984,10 +2063,12 @@ function EventsPage({ episodes, openEvent, openCheckin, refresh, prepare }: {
             </div>;
           })}
         </div>:<div className="first-checkin"><Activity size={18}/><span><b>No check-ins yet</b><small>Start a baseline to make recovery measurable.</small></span></div>}
-        <div className="event-meta"><span><FileText size={14}/>{episode.documentCount} documents</span><span><Activity size={14}/>{episode.checkins.length} check-ins</span></div>
-        <footer><button className="btn primary" onClick={()=>openCheckin(episode)} disabled={episode.status==="closed"}><Plus size={15}/>Today’s check-in</button><button className="btn ghost" onClick={()=>prepare(episode)}><Stethoscope size={15}/>Doctor prep</button></footer>
+        <div className="track-thread-summary">{episode.appointments?.[0] && <span><CalendarClock size={14}/>{episode.appointments[0].title} · {episode.appointments[0].dueDate ? prettyDate(episode.appointments[0].dueDate) : "date pending"}</span>}{episode.actions?.length ? <span><Zap size={14}/>{episode.actions.length} open actions</span> : null}{episode.medicines?.length ? <span><Pill size={14}/>{episode.medicines.length} medicines</span> : null}{episode.biomarkers?.length ? <span><FlaskConical size={14}/>{episode.biomarkers.length} biomarkers</span> : null}</div>
+        <div className="event-meta"><button onClick={()=>setDocumentEpisode(episode)}><FileText size={14}/>{episode.documentCount} documents</button><span><Activity size={14}/>{episode.checkins.length} check-ins</span></div>
+        <footer><button className="btn primary" onClick={()=>openCheckin(episode)} disabled={episode.status==="closed"}><Plus size={15}/>Today’s check-in</button><button className="btn ghost" onClick={()=>prepare(episode)}><Stethoscope size={15}/>Doctor prep</button><button className="btn ghost" onClick={()=>ask(episode)}><Sparkles size={15}/>Ask in track</button></footer>
       </article>;
     })}</div>:<EmptyState icon={HeartPulse} title={episodes.length?`No ${filter} care tracks`:"Add your first care track"} text="Create a care track for a diagnosis, medication course, mental health plan, or anything you want to monitor over time." action={openEvent}/>} 
+    {documentEpisode && <div className="modal-backdrop" onMouseDown={(event)=>event.target===event.currentTarget&&setDocumentEpisode(null)}><div className="track-doc-drawer"><header><div><p className="eyebrow">{documentEpisode.title}</p><h2>Track documents</h2><p>Preview source records without leaving this thread of care.</p></div><button className="icon-btn" onClick={()=>setDocumentEpisode(null)}><X size={18}/></button></header>{documentEpisode.linkedDocuments.length ? documentEpisode.linkedDocuments.map((document)=><article key={document.id}><FileText size={19}/><div><b>{document.filename}</b><small>{document.documentType}</small><p>{document.summary}</p></div>{document.hasFile&&<a className="btn ghost" target="_blank" rel="noreferrer" href={`/api/documents/${document.id}/file`}><Eye size={15}/>Preview</a>}</article>) : <EmptyState icon={FileText} title="No documents in this track" text="Upload a record and choose this care track to connect it."/>}<footer><button className="btn primary" onClick={()=>{setDocumentEpisode(null);prepare(documentEpisode);}}><Stethoscope size={15}/>Open track doctor prep</button></footer></div></div>}
   </div>;
 }
 
@@ -2148,15 +2229,31 @@ function DocumentsPage({
   documents,
   openUpload,
   currentProfileId,
+  episodes,
+  refresh,
 }: {
   documents: DocumentItem[];
   openUpload: () => void;
   currentProfileId: number;
+  episodes: Episode[];
+  refresh: () => Promise<void>;
 }) {
+  const [track, setTrack] = useState("");
+  const [type, setType] = useState("");
+  const [after, setAfter] = useState("");
+  const [preview, setPreview] = useState<DocumentItem | null>(null);
   const missing = documents.filter((doc) => !Boolean(doc.hasFile)).length;
   const profileQuery = currentProfileId ? `?profileId=${currentProfileId}` : "";
+  const types = [...new Set(documents.map((document) => document.documentType))].sort();
+  const filtered = documents.filter((document) => (!track || String(document.episodeId) === track) && (!type || document.documentType === type) && (!after || document.date >= after));
+  const reassign = async (documentId: number, episodeId: string) => {
+    if (!episodeId) return;
+    await api(`/api/documents/${documentId}/care-track`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ episodeId: Number(episodeId) }) });
+    await refresh();
+  };
   return documents.length ? (
     <div className="document-page">
+      <div className="document-filters card"><label><span>Care track</span><select value={track} onChange={(event) => setTrack(event.target.value)}><option value="">All care tracks</option>{episodes.map((episode) => <option value={episode.id} key={episode.id}>{episode.title}</option>)}</select></label><label><span>Document type</span><select value={type} onChange={(event) => setType(event.target.value)}><option value="">All document types</option>{types.map((value) => <option key={value}>{value}</option>)}</select></label><label><span>From date</span><input type="date" value={after} onChange={(event) => setAfter(event.target.value)}/></label><span className="tag">{filtered.length} records</span></div>
       {missing > 0 && (
         <div className="document-banner card">
           <AlertCircle size={18} />
@@ -2173,7 +2270,7 @@ function DocumentsPage({
         </div>
       )}
       <div className="document-library">
-        {documents.map((d) => (
+        {filtered.map((d) => (
           <article className="document-card card" key={d.id}>
             <div className="document-icon"><FileText size={21}/></div>
             <div className="document-copy">
@@ -2186,12 +2283,16 @@ function DocumentsPage({
               </div>
               <h3>{d.filename}</h3>
               <p>{d.summary || "No description was extracted for this record."}</p>
+              {(d.instructions?.length || d.actionItems?.length) ? <div className="document-action-summary"><b>Generated actions</b>{[...(d.instructions || []), ...(d.actionItems || []).map((item) => item.title)].slice(0, 3).map((item) => <small key={item}>• {item}</small>)}</div> : null}
               <small>{prettyDate(d.date)} · {d.provider || "Provider not captured"} · {Math.round((d.confidence||0)*100)}% extraction confidence</small>
+              <label className="document-track-select"><span>Care track</span><select value={d.episodeId || ""} onChange={(event) => reassign(d.id, event.target.value)}><option value="" disabled>Choose track</option>{episodes.map((episode) => <option value={episode.id} key={episode.id}>{episode.title}</option>)}</select></label>
             </div>
-            <div className="document-actions">{d.hasFile?<><a className="icon-btn" aria-label={`View ${d.filename}`} href={`/api/documents/${d.id}/file${profileQuery}`} target="_blank" rel="noreferrer"><Eye size={16}/></a><a className="icon-btn" aria-label={`Download ${d.filename}`} href={`/api/documents/${d.id}/file${profileQuery ? `${profileQuery}&download=1` : "?download=1"}`}><Download size={16}/></a></>:<span className="stored-legacy">Earlier version</span>}</div>
+            <div className="document-actions">{d.hasFile?<><button className="icon-btn" aria-label={`Preview ${d.filename}`} onClick={() => setPreview(d)}><Eye size={16}/></button><a className="icon-btn" aria-label={`Download ${d.filename}`} href={`/api/documents/${d.id}/file${profileQuery ? `${profileQuery}&download=1` : "?download=1"}`}><Download size={16}/></a></>:<span className="stored-legacy">Earlier version</span>}</div>
           </article>
         ))}
+        {!filtered.length && <EmptyState icon={Search} title="No matching documents" text="Try clearing one of the care track, type, or date filters."/>}
       </div>
+      {preview && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setPreview(null)}><div className="document-preview-modal"><header><div><p className="eyebrow">{preview.documentType}</p><h2>{preview.filename}</h2><small>{preview.episodeTitle || "General health"}</small></div><button className="icon-btn" onClick={() => setPreview(null)}><X size={18}/></button></header><iframe title={preview.filename} src={`/api/documents/${preview.id}/file${profileQuery}`}/></div></div>}
     </div>
   ) : (
     <EmptyState
@@ -2209,7 +2310,7 @@ function MedicationsPage({
   openIntervention,
 }: {
   interventions: Intervention[];
-  logTaken: (intervention: Intervention) => Promise<void>;
+  logTaken: (intervention: Intervention, slotKey?: string) => Promise<void>;
   openIntervention: () => void;
 }) {
   const active = interventions.filter((item) => item.status === "active");
@@ -2241,16 +2342,17 @@ function MedicationsPage({
                   const slot = item.scheduleSlots.find((entry) => entry.period === group.period);
                   const accent = accentForIntervention(item);
                   return (
-                    <article className={`med-slot-card ${accent} ${item.todaysTaken ? "done" : ""}`} key={`${group.period}-${item.id}`}>
+                    <article className={`med-slot-card ${accent} ${item.takenSlots?.includes(slot?.key || "") ? "done" : ""}`} key={`${group.period}-${item.id}`}>
                       <div>
                         <b>{item.name}</b>
                         <small>{slot?.timeLabel || item.frequency || "Flexible"} · {item.dose || "Dose not captured"}</small>
                         <small className="slot-context">{item.episodeTitle || "General routine"}</small>
                       </div>
                       <button
-                        className={`slot-check ${item.todaysTaken ? "done" : ""}`}
-                        onClick={() => logTaken(item)}
-                        disabled={item.todaysTaken}
+                        aria-label={item.takenSlots?.includes(slot?.key || "") ? `${item.name} taken for ${group.period}` : `Mark ${item.name} taken for ${group.period}`}
+                        className={`slot-check ${item.takenSlots?.includes(slot?.key || "") ? "done" : ""}`}
+                        onClick={() => logTaken(item, slot?.key)}
+                        disabled={item.takenSlots?.includes(slot?.key || "")}
                       >
                         <Check size={14} />
                       </button>
@@ -2337,6 +2439,15 @@ function MedicationsPage({
   );
 }
 
+function NutritionPage({ data, openFood, currentProfileId }: { data: Dashboard; openFood: () => void; currentProfileId: number }) {
+  const query = currentProfileId ? `?profileId=${currentProfileId}` : "";
+  return <div className="nutrition-page">
+    <section className="nutrition-summary card"><div><p className="eyebrow">MEAL PATTERNS</p><h2>Quality and balance, not calories</h2><p>Photo assessments are observational and stay connected to the shared health timeline.</p></div><button className="btn primary" onClick={openFood}><Camera size={16}/>Add meal photo</button></section>
+    {data.foodTrends.length > 0 && <section className="food-trends">{data.foodTrends.map((trend) => <article className="card" key={trend}><Activity size={18}/><p>{trend}</p></article>)}</section>}
+    {data.foodEntries.length ? <div className="food-timeline">{data.foodEntries.map((entry) => <article className="food-entry card" key={entry.id}><img src={`/api/food/${entry.id}/image${query}`} alt={entry.mealType ? `${entry.mealType} meal` : "Meal"}/><div><header><div><span className="type-label">{entry.mealType || "Meal"}</span>{entry.episodeTitle && <span className="episode-chip">{entry.episodeTitle}</span>}</div><small>{new Date(entry.eatenAt).toLocaleString()}</small></header><h3>{entry.summary}</h3><div className="meal-balance"><span>Protein <b>{entry.assessment.protein || "unclear"}</b></span><span>Carbs <b>{entry.assessment.carbBalance || "unclear"}</b></span><span>Fat <b>{entry.assessment.fatBalance || "unclear"}</b></span><span>Fiber <b>{entry.assessment.fiber || "unclear"}</b></span></div>{entry.assessment.processedOrSugary && <p className="food-signal">Processed or sugary signals visible</p>}{entry.assessment.hydrationCue && <p>Hydration cue: {entry.assessment.hydrationCue}</p>}</div></article>)}</div> : <EmptyState icon={Utensils} title="No meals captured" text="Add a food photo from either the caregiver or elder app. It will appear on this shared timeline." action={openFood}/>}
+  </div>;
+}
+
 function DataPage({
   page,
   data,
@@ -2346,15 +2457,17 @@ function DataPage({
   logTaken,
   doctorEpisodeId,
   currentProfileId,
+  openFood,
 }: {
   page: string;
   data: Dashboard;
   openUpload: () => void;
   openIntervention: () => void;
   refresh: () => Promise<void>;
-  logTaken: (intervention: Intervention) => Promise<void>;
+  logTaken: (intervention: Intervention, slotKey?: string) => Promise<void>;
   doctorEpisodeId?: number | null;
   currentProfileId: number;
+  openFood: () => void;
 }) {
   const [brief, setBrief] = useState("");
   const [briefDocuments, setBriefDocuments] = useState<Array<Pick<DocumentItem,"id"|"filename"|"documentType"|"summary"|"hasFile">>>([]);
@@ -2397,6 +2510,8 @@ function DataPage({
               ? "Source records parsed and organized locally."
               : page === "Biomarkers"
                 ? "Provider-independent longitudinal laboratory history."
+              : page === "Nutrition"
+                ? "Shared meal photos, balance assessments, and useful patterns without calorie counting."
               : page === "Medications"
                   ? "Current prescriptions and supplements, with an easy daily routine."
                   : "A concise, evidence-grounded appointment summary."}
@@ -2432,7 +2547,10 @@ function DataPage({
           />
         ))}
       {page === "Documents" && (
-        <DocumentsPage documents={data.documents} openUpload={openUpload} currentProfileId={currentProfileId} />
+        <DocumentsPage documents={data.documents} openUpload={openUpload} currentProfileId={currentProfileId} episodes={data.episodes} refresh={refresh} />
+      )}
+      {page === "Nutrition" && (
+        <NutritionPage data={data} openFood={openFood} currentProfileId={currentProfileId}/>
       )}
       {page === "Medications" && (
         <MedicationsPage
@@ -2482,6 +2600,7 @@ export default function App() {
       : null,
   );
   const [doctorEpisodeId, setDoctorEpisodeId] = useState<number | null>(null);
+  const [assistantEpisodeId, setAssistantEpisodeId] = useState<number | null>(null);
   const [elderPanel, setElderPanel] = useState<ElderPanelState>(
     portal === "elder" ? initialElderPanel : null,
   );
@@ -2663,14 +2782,15 @@ export default function App() {
     });
     await refresh();
   };
-  const logTaken = async (intervention: Intervention) => {
-    await api(`/api/interventions/${intervention.id}/adherence`, {
+  const logTaken = async (intervention: Intervention, slotKey?: string) => {
+    const resolvedSlot = slotKey || intervention.scheduleSlots?.[0]?.key || "anytime";
+    await api(`/api/interventions/${intervention.id}/doses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         date: new Date().toISOString().slice(0, 10),
-        taken: true,
-        dose: intervention.dose,
+        slotKey: resolvedSlot,
+        status: "taken",
       }),
     });
     await refresh();
@@ -2695,6 +2815,7 @@ export default function App() {
               data={data}
               currentProfile={currentProfile}
               openUpload={() => applyUiState({ nextOverlay: "upload" }, "push")}
+              openFood={() => applyUiState({ nextOverlay: "food" }, "push")}
               logTaken={logTaken}
               activePanel={elderPanel}
               onPanelChange={(panel) =>
@@ -2712,6 +2833,7 @@ export default function App() {
             simpleFlow
           />
         )}
+        {overlay === "food" && <FoodModal close={() => applyUiState({ nextOverlay: null }, "replace")} onComplete={refresh} simpleFlow/>}
         {overlay === "profile" && (
           <AddProfileModal
             close={() => applyUiState({ nextOverlay: null }, "replace")}
@@ -2734,7 +2856,7 @@ export default function App() {
         </button>
         <nav>
           {nav.map((item) => {
-            const icons:Record<string,typeof Activity> = { Overview:LayoutDashboard, "Care tracks":HeartPulse, Medications:Pill, Biomarkers:FlaskConical, Timeline:Activity, Documents:FileText, "Doctor prep":Stethoscope };
+            const icons:Record<string,typeof Activity> = { Overview:LayoutDashboard, "Care tracks":HeartPulse, Medications:Pill, Biomarkers:FlaskConical, Nutrition:Utensils, Timeline:Activity, Documents:FileText, "Doctor prep":Stethoscope };
             const I = icons[item];
             return (
               <button
@@ -2928,6 +3050,7 @@ export default function App() {
                 setDoctorEpisodeId(episode.id);
                 applyUiState({ nextPage: "Doctor prep" }, "push");
               }}
+              ask={(episode) => { setAssistantEpisodeId(episode.id); applyUiState({ nextOverlay: "assistant" }, "push"); }}
             />
           ) : (
             <DataPage
@@ -2941,6 +3064,7 @@ export default function App() {
               logTaken={logTaken}
               doctorEpisodeId={doctorEpisodeId}
               currentProfileId={selectedProfileId || data.currentProfileId}
+              openFood={() => applyUiState({ nextOverlay: "food" }, "push")}
             />
           )}
           <footer>
@@ -2964,8 +3088,10 @@ export default function App() {
         <UploadModal
           close={() => applyUiState({ nextOverlay: null }, "replace")}
           onComplete={refresh}
+          episodes={data.episodes}
         />
       )}{" "}
+      {overlay === "food" && <FoodModal close={() => applyUiState({ nextOverlay: null }, "replace")} onComplete={refresh} episodes={data.episodes}/>} {" "}
       {overlay === "intervention" && (
         <InterventionModal
           close={() => applyUiState({ nextOverlay: null }, "replace")}
@@ -2992,8 +3118,9 @@ export default function App() {
       )}{" "}
       {overlay === "assistant" && (
         <Assistant
-          close={() => applyUiState({ nextOverlay: null }, "replace")}
+          close={() => { setAssistantEpisodeId(null); applyUiState({ nextOverlay: null }, "replace"); }}
           hasData={data.counts.documents + data.counts.interventions > 0}
+          episode={data.episodes.find((episode) => episode.id === assistantEpisodeId) || null}
         />
       )}{" "}
       {overlay === "profile" && (

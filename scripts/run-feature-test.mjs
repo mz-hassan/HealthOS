@@ -86,6 +86,20 @@ const report = {
     relationshipInsights: dashboard.insights.filter(
       (x) => x.eyebrow === "POSSIBLE RELATIONSHIP",
     ).length,
+    documentActionsAvailable: Array.isArray(dashboard.actions),
+    appointmentsTrackScoped: dashboard.followups.every(
+      (item) => item.kind !== "appointment" || Boolean(item.episodeTitle),
+    ),
+    missedDoseAbstraction: Array.isArray(dashboard.missedDoses) && dashboard.missedDoses.every(
+      (item) => item.interventionId && item.slotKey && item.notification?.type === "medication_missed",
+    ),
+    caregiverDigestComplete: ["newDocuments", "abnormalLabs", "missedMedicines", "upcomingAppointments", "foodPatterns", "worseningCheckins"].every(
+      (key) => Array.isArray(dashboard.digest?.[key]),
+    ),
+    nutritionTimelineAvailable: Array.isArray(dashboard.foodEntries) && Array.isArray(dashboard.foodTrends),
+    observationalRiskFlags: Array.isArray(dashboard.riskFlags) && dashboard.riskFlags.every(
+      (flag) => /observation|does not|not a clinical|not establish|not causal/i.test(flag.observation),
+    ),
   },
   assistant,
   doctorBrief: {
@@ -111,6 +125,12 @@ if (
   !report.dataQuality.nonInjuryEpisodesAreDynamic ||
   !report.dataQuality.allDocumentsAssigned ||
   !report.dataQuality.medicationSchedulesAvailable ||
+  !report.dataQuality.documentActionsAvailable ||
+  !report.dataQuality.appointmentsTrackScoped ||
+  !report.dataQuality.missedDoseAbstraction ||
+  !report.dataQuality.caregiverDigestComplete ||
+  !report.dataQuality.nutritionTimelineAvailable ||
+  !report.dataQuality.observationalRiskFlags ||
   assistant.some((x) => !x.pass) ||
   !report.doctorBrief.pass
 )

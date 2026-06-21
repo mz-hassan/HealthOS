@@ -89,6 +89,23 @@ db.exec(`
     notes TEXT, flagged INTEGER NOT NULL DEFAULT 0, flag_reason TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(episode_id,log_date)
   );
+  CREATE TABLE IF NOT EXISTS document_actions (
+    id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL, action_type TEXT NOT NULL,
+    title TEXT NOT NULL, detail TEXT, due_date TEXT, status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS medication_dose_logs (
+    id INTEGER PRIMARY KEY, intervention_id INTEGER NOT NULL REFERENCES interventions(id) ON DELETE CASCADE,
+    log_date TEXT NOT NULL, slot_key TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('taken','missed','skipped')),
+    logged_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, notes TEXT,
+    UNIQUE(intervention_id,log_date,slot_key)
+  );
+  CREATE TABLE IF NOT EXISTS food_entries (
+    id INTEGER PRIMARY KEY, profile_id INTEGER NOT NULL, episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
+    eaten_at TEXT NOT NULL, meal_type TEXT, image_blob BLOB NOT NULL, mime_type TEXT NOT NULL,
+    summary TEXT NOT NULL, assessment_json TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 const documentColumns = db.prepare("PRAGMA table_info(documents)").all() as Array<{ name: string }>;
 const profileColumns = db.prepare("PRAGMA table_info(profiles)").all() as Array<{ name: string }>;
@@ -115,6 +132,8 @@ if (!documentColumns.some((c) => c.name === "profile_id"))
   db.exec(`ALTER TABLE documents ADD COLUMN profile_id INTEGER NOT NULL DEFAULT ${defaultProfileId}`);
 if (!documentColumns.some((c) => c.name === "file_blob")) db.exec("ALTER TABLE documents ADD COLUMN file_blob BLOB");
 if (!documentColumns.some((c) => c.name === "mime_type")) db.exec("ALTER TABLE documents ADD COLUMN mime_type TEXT");
+if (!documentColumns.some((c) => c.name === "instructions_json")) db.exec("ALTER TABLE documents ADD COLUMN instructions_json TEXT NOT NULL DEFAULT '[]'");
+if (!documentColumns.some((c) => c.name === "action_items_json")) db.exec("ALTER TABLE documents ADD COLUMN action_items_json TEXT NOT NULL DEFAULT '[]'");
 const interventionColumns = db
   .prepare("PRAGMA table_info(interventions)")
   .all() as Array<{ name: string }>;
@@ -296,10 +315,21 @@ const extractionSchema = z.object({
       }),
     )
     .default([]),
+  instructions: z.array(z.string().trim().min(2)).default([]),
+  actionItems: z
+    .array(
+      z.object({
+        title: z.string().trim().min(2),
+        detail: z.string().nullable().optional(),
+        dueDate: z.string().nullable().optional(),
+        type: z.enum(["appointment", "test", "medication", "monitoring", "lifestyle", "other"]).default("other"),
+      }),
+    )
+    .default([]),
 });
 
 const extractionPrompt = `You extract medical facts from parsed documents. Return ONLY valid JSON matching:
-{"documentType":"Blood report|Prescription|Doctor note|Consultation summary|Discharge summary|Radiology report|Vaccination record|Medical document","date":"YYYY-MM-DD or null","provider":"string or null","summary":"concise factual summary","confidence":0.0,"biomarkers":[{"name":"canonical laboratory analyte name","value":0,"unit":"string or null","referenceRange":"string or null","status":"low|normal|high|critical|unknown"}],"diagnoses":[{"name":"string","date":"YYYY-MM-DD or null","status":"string or null"}],"medications":[{"name":"string","dose":"string or null","frequency":"string or null","status":"active|stopped|unknown"}],"followUps":[{"title":"explicit future test, review, referral, or monitoring task","dueDate":"YYYY-MM-DD or null","reason":"string or null"}],"observations":[{"name":"symptom, functional measure, or patient-reported outcome","value":0,"unit":"string or null","severity":"string or null","notes":"string or null"}]}
+{"documentType":"Blood report|Prescription|Consultation note|Imaging|Discharge summary|Referral|Vaccination record|Medical document","date":"YYYY-MM-DD or null","provider":"string or null","summary":"concise factual summary","confidence":0.0,"biomarkers":[{"name":"canonical laboratory analyte name","value":0,"unit":"string or null","referenceRange":"string or null","status":"low|normal|high|critical|unknown"}],"diagnoses":[{"name":"string","date":"YYYY-MM-DD or null","status":"string or null"}],"medications":[{"name":"string","dose":"string or null","frequency":"string or null","status":"active|stopped|unknown"}],"followUps":[{"title":"explicit future test, review, referral, or monitoring task","dueDate":"YYYY-MM-DD or null","reason":"string or null"}],"observations":[{"name":"symptom, functional measure, or patient-reported outcome","value":0,"unit":"string or null","severity":"string or null","notes":"string or null"}],"instructions":["explicit care instruction"],"actionItems":[{"title":"concise action","detail":"why/how or null","dueDate":"YYYY-MM-DD or null","type":"appointment|test|medication|monitoring|lifestyle|other"}]}
 Never infer facts that are absent. Biomarkers are ONLY laboratory analytes from laboratory results; pain scores, range of motion, balance time, weight, symptoms, and physical-exam measurements belong in observations. Follow-ups are explicit future actions, not current treatment instructions. Look carefully for the next scheduled appointment, clinic review, specialist visit, referral booking, or repeat test date, especially when a document says "follow up", "review", "return", "see again", or "repeat in X weeks". If a future visit is tied to a diagnosis or care stream, preserve that context in the follow-up title or reason. Normalize dates and biomarker names. Numeric biomarker values must be numbers.`;
 
 const episodeMarkerSchema = z.object({
@@ -929,7 +959,7 @@ function persistExtraction(
   try {
     const doc = db
       .prepare(
-        "INSERT INTO documents(profile_id,filename,document_type,document_date,provider,summary,confidence,status,parsed_text,extracted_json,mime_type,file_blob) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO documents(profile_id,filename,document_type,document_date,provider,summary,confidence,status,parsed_text,extracted_json,mime_type,file_blob,instructions_json,action_items_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       )
       .run(
         profileId,
@@ -944,6 +974,8 @@ function persistExtraction(
         JSON.stringify(extraction),
         mimeType,
         fileBuffer,
+        JSON.stringify(extraction.instructions),
+        JSON.stringify(extraction.actionItems),
       );
     const documentId = Number(doc.lastInsertRowid);
     let episodeId: number | null = null;
@@ -1047,7 +1079,16 @@ function persistExtraction(
       const existing = db.prepare(
         "SELECT id FROM interventions WHERE profile_id=? AND lower(name)=lower(?) AND status='active' LIMIT 1",
       ).get(profileId, med.name);
-      if (existing || med.status === "stopped") continue;
+      if (med.status === "stopped") {
+        db.prepare("UPDATE interventions SET status='stopped',end_date=? WHERE profile_id=? AND lower(name)=lower(?) AND status='active'")
+          .run(date, profileId, med.name);
+        continue;
+      }
+      if (existing) {
+        db.prepare("UPDATE interventions SET dose=COALESCE(?,dose),frequency=COALESCE(?,frequency) WHERE id=?")
+          .run(med.dose || null, med.frequency || null, (existing as any).id);
+        continue;
+      }
       const frequency = med.frequency || "As prescribed";
       const scheduleSlots = deriveScheduleSlots(frequency, "Medication");
       const schedule = /twice|2\s*x|bid/i.test(frequency)
@@ -1103,6 +1144,19 @@ function persistExtraction(
         f.dueDate || null,
         f.reason || null,
       );
+    }
+    const actionInsert = db.prepare(
+      "INSERT INTO document_actions(document_id,episode_id,action_type,title,detail,due_date) VALUES(?,?,?,?,?,?)",
+    );
+    const extractedActions = [
+      ...extraction.actionItems,
+      ...extraction.instructions.map((instruction) => ({
+        title: instruction, detail: null, dueDate: null, type: "other" as const,
+      })),
+    ];
+    for (const action of extractedActions) {
+      if (extraction.followUps.some((followup) => similarTask(followup.title, action.title))) continue;
+      actionInsert.run(documentId, episodeId, action.type, action.title, action.detail || null, action.dueDate || null);
     }
     db.exec("COMMIT");
     return documentId;
@@ -1181,12 +1235,16 @@ function dashboardData(profileId: number) {
     .get(profileId) as any;
   const docs = db
     .prepare(
-      "SELECT d.id,d.filename,d.document_type as documentType,d.document_date as date,d.provider,d.summary,d.status,d.confidence,d.created_at as createdAt,d.mime_type as mimeType,(d.file_blob IS NOT NULL) as hasFile,e.id as episodeId,e.title as episodeTitle,de.confidence as episodeConfidence FROM documents d LEFT JOIN document_episodes de ON de.document_id=d.id LEFT JOIN episodes e ON e.id=de.episode_id WHERE d.profile_id=? ORDER BY COALESCE(d.document_date,d.created_at) DESC",
+      "SELECT d.id,d.filename,d.document_type as documentType,d.document_date as date,d.provider,d.summary,d.status,d.confidence,d.created_at as createdAt,d.mime_type as mimeType,(d.file_blob IS NOT NULL) as hasFile,d.instructions_json as instructionsJson,d.action_items_json as actionItemsJson,e.id as episodeId,e.title as episodeTitle,de.confidence as episodeConfidence FROM documents d LEFT JOIN document_episodes de ON de.document_id=d.id LEFT JOIN episodes e ON e.id=de.episode_id WHERE d.profile_id=? AND d.status!='archived' ORDER BY COALESCE(d.document_date,d.created_at) DESC",
     )
-    .all(profileId);
+    .all(profileId).map((document: any) => ({
+      ...document,
+      instructions: safeJson<string[]>(document.instructionsJson, []),
+      actionItems: safeJson<any[]>(document.actionItemsJson, []),
+    }));
   const rawMarkers = db
     .prepare(
-      "SELECT b.name,b.normalized_name as normalizedName,b.value,b.unit,b.reference_range as referenceRange,b.status,b.measured_at as date FROM biomarkers b JOIN documents d ON d.id=b.document_id WHERE d.profile_id=? ORDER BY b.measured_at ASC",
+      "SELECT b.name,b.normalized_name as normalizedName,b.value,b.unit,b.reference_range as referenceRange,b.status,b.measured_at as date,e.id as episodeId,e.title as episodeTitle FROM biomarkers b JOIN documents d ON d.id=b.document_id LEFT JOIN document_episodes de ON de.document_id=d.id LEFT JOIN episodes e ON e.id=de.episode_id WHERE d.profile_id=? ORDER BY b.measured_at ASC",
     )
     .all(profileId) as Array<Record<string, unknown>>;
   const groups = new Map<string, Array<Record<string, unknown>>>();
@@ -1222,7 +1280,11 @@ function dashboardData(profileId: number) {
                 ? "watch"
                 : r.status,
           range: r.referenceRange || "Not provided",
+          episodeId: r.episodeId || null,
+          episodeTitle: r.episodeTitle || null,
         })),
+        episodeId: latest.episodeId || null,
+        episodeTitle: latest.episodeTitle || null,
       };
     })
     .sort((a, b) => String(a.status).localeCompare(String(b.status)));
@@ -1251,15 +1313,15 @@ function dashboardData(profileId: number) {
     const latest = (
       db
         .prepare(
-          "SELECT MAX(log_date) as date FROM adherence_logs WHERE intervention_id=?",
+          "SELECT MAX(log_date) as date FROM (SELECT log_date FROM adherence_logs WHERE intervention_id=? UNION ALL SELECT log_date FROM medication_dose_logs WHERE intervention_id=?)",
         )
-        .get(i.id) as any
+        .get(i.id, i.id) as any
     )?.date;
     let adherence7d: null | number = i.status === "active" ? 0 : null;
     if (latest) {
       const start = new Date(`${latest}T12:00:00`);
       start.setDate(start.getDate() - 6);
-      const taken = Number(
+      const legacyTaken = Number(
         (
           db
             .prepare(
@@ -1268,6 +1330,10 @@ function dashboardData(profileId: number) {
             .get(i.id, start.toISOString().slice(0, 10), latest) as any
         ).n,
       );
+      const slotTaken = Number((db.prepare(
+        "SELECT COUNT(*) as n FROM medication_dose_logs WHERE intervention_id=? AND status='taken' AND log_date BETWEEN ? AND ?",
+      ).get(i.id, start.toISOString().slice(0, 10), latest) as any).n);
+      const taken = Math.max(legacyTaken, slotTaken);
       adherence7d = Math.min(
         100,
         Math.round((taken / Math.max(1, i.schedulePerWeek)) * 100),
@@ -1277,16 +1343,14 @@ function dashboardData(profileId: number) {
       i.scheduleJson,
       deriveScheduleSlots(i.frequency, i.type),
     );
-    const todaysTaken = Boolean(
-      (
-        db
-          .prepare(
-            "SELECT taken FROM adherence_logs WHERE intervention_id=? AND log_date=? ORDER BY id DESC LIMIT 1",
-          )
-          .get(i.id, new Date().toISOString().slice(0, 10)) as any
-      )?.taken,
-    );
-    return { ...i, adherence7d, scheduleSlots, todaysTaken };
+    const today = new Date().toISOString().slice(0, 10);
+    const takenSlots = (db.prepare(
+      "SELECT slot_key as slotKey FROM medication_dose_logs WHERE intervention_id=? AND log_date=? AND status='taken'",
+    ).all(i.id, today) as any[]).map((row) => row.slotKey);
+    const legacyTaken = Boolean((db.prepare(
+      "SELECT taken FROM adherence_logs WHERE intervention_id=? AND log_date=? ORDER BY id DESC LIMIT 1",
+    ).get(i.id, today) as any)?.taken);
+    return { ...i, adherence7d, scheduleSlots, takenSlots, todaysTaken: legacyTaken || takenSlots.length >= scheduleSlots.length };
   });
   const episodes = (db
     .prepare(
@@ -1312,8 +1376,46 @@ function dashboardData(profileId: number) {
       const linkedDocuments = db.prepare(
         "SELECT d.id,d.filename,d.document_type as documentType,d.summary,(d.file_blob IS NOT NULL) as hasFile FROM documents d JOIN document_episodes de ON de.document_id=d.id WHERE de.episode_id=? ORDER BY d.document_date DESC",
       ).all(episode.id);
-      return { ...episode, markerSchema, checkins, linkedDocuments };
+      return {
+        ...episode,
+        markerSchema,
+        checkins,
+        linkedDocuments,
+        appointments: followups.filter((item: any) => item.episodeTitle === episode.title && item.kind === "appointment"),
+        actions: db.prepare("SELECT id,action_type as type,title,detail,due_date as dueDate,status FROM document_actions WHERE episode_id=? AND status='open' ORDER BY due_date IS NULL,due_date ASC").all(episode.id),
+        medicines: interventions.filter((item: any) => Number(item.episodeId) === Number(episode.id)),
+        biomarkers: biomarkers.filter((item: any) => Number(item.episodeId) === Number(episode.id)),
+      };
     });
+  const actions = db.prepare(
+    "SELECT a.id,a.action_type as type,a.title,a.detail,a.due_date as dueDate,a.status,a.document_id as documentId,d.filename,e.id as episodeId,e.title as episodeTitle FROM document_actions a JOIN documents d ON d.id=a.document_id LEFT JOIN episodes e ON e.id=a.episode_id WHERE d.profile_id=? AND a.status='open' ORDER BY a.due_date IS NULL,a.due_date ASC,a.id DESC",
+  ).all(profileId);
+  const foodEntries = (db.prepare(
+    "SELECT f.id,f.eaten_at as eatenAt,f.meal_type as mealType,f.summary,f.assessment_json as assessmentJson,f.episode_id as episodeId,e.title as episodeTitle FROM food_entries f LEFT JOIN episodes e ON e.id=f.episode_id WHERE f.profile_id=? ORDER BY f.eaten_at DESC LIMIT 60",
+  ).all(profileId) as any[]).map((entry) => ({ ...entry, assessment: safeJson(entry.assessmentJson, {}) }));
+  const now = new Date();
+  const slotDueHour: Record<string, number> = { morning: 12, midday: 17, evening: 22, bedtime: 24, weekly: 24, anytime: 24 };
+  const missedDoses: any[] = [];
+  for (const intervention of interventions.filter((item: any) => item.status === "active" && /medication|medicine/i.test(item.type))) {
+    for (let daysAgo = 1; daysAgo >= 0; daysAgo--) {
+      const day = new Date(now); day.setDate(day.getDate() - daysAgo);
+      const date = day.toISOString().slice(0, 10);
+      for (const slot of intervention.scheduleSlots) {
+        if (daysAgo === 0 && now.getHours() < (slotDueHour[slot.period] ?? 24)) continue;
+        const log = db.prepare("SELECT status FROM medication_dose_logs WHERE intervention_id=? AND log_date=? AND slot_key=?").get(intervention.id, date, slot.key) as any;
+        const legacy = db.prepare("SELECT taken FROM adherence_logs WHERE intervention_id=? AND log_date=?").get(intervention.id, date) as any;
+        if (log?.status === "taken" || (legacy?.taken && intervention.scheduleSlots.length === 1)) continue;
+        missedDoses.push({
+          id: `dose-${intervention.id}-${date}-${slot.key}`,
+          interventionId: intervention.id, medicine: intervention.name, dose: intervention.dose,
+          date, slotKey: slot.key, slotLabel: slot.label, timeLabel: slot.timeLabel,
+          episodeId: intervention.episodeId, episodeTitle: intervention.episodeTitle,
+          status: log?.status || "unlogged", severity: daysAgo > 0 ? "missed" : "due",
+          notification: { type: "medication_missed", channel: "in_app", actionable: true },
+        });
+      }
+    }
+  }
   const insights = biomarkers
     .filter((b) => b.points.length > 1)
     .slice(0, 3)
@@ -1459,6 +1561,35 @@ function dashboardData(profileId: number) {
       return order[a.priority] - order[b.priority];
     })
     .slice(0, 8);
+  const recentMeals = foodEntries.filter((entry: any) => Date.now() - new Date(entry.eatenAt).valueOf() <= 14 * 86400000);
+  const patternCount = (key: string, value: string) => recentMeals.filter((entry: any) => String(entry.assessment?.[key] || "").toLowerCase() === value).length;
+  const foodTrends = [
+    patternCount("carbBalance", "heavy") >= 3 ? `High-carbohydrate meals appeared ${patternCount("carbBalance", "heavy")} times in the last 14 days.` : null,
+    patternCount("protein", "low") >= 3 ? `Low-protein meals appeared ${patternCount("protein", "low")} times in the last 14 days.` : null,
+    recentMeals.filter((entry: any) => entry.assessment?.processedOrSugary).length >= 3 ? "Processed or sugary meal signals appeared repeatedly in the last 14 days." : null,
+  ].filter(Boolean);
+  const riskFlags: Array<{ id: string; title: string; observation: string; episodeTitles: string[]; severity: string }> = [];
+  const worsening = (name: RegExp) => biomarkers.find((marker: any) => name.test(marker.name) && marker.points.length > 1 && Number(marker.points.at(-1).value) > Number(marker.points.at(-2).value));
+  const renalMarker = worsening(/creatinine/i) || biomarkers.find((marker: any) => /egfr/i.test(marker.name) && marker.points.length > 1 && Number(marker.points.at(-1).value) < Number(marker.points.at(-2).value));
+  const renalMeds = interventions.filter((item: any) => item.status === "active" && /creatine|nsaid|ibuprofen|lithium|diuretic|supplement/i.test(`${item.name} ${item.type}`));
+  if (renalMarker && renalMeds.length) riskFlags.push({ id: "renal-active-routines", severity: "watch", title: "Renal trend alongside active routines", observation: `${renalMarker.name} changed in a concerning direction while ${renalMeds.map((item: any) => item.name).join(", ")} is active. This is an observation to review, not a clinical conclusion.`, episodeTitles: [...new Set(renalMeds.map((item: any) => item.episodeTitle).filter(Boolean))] as string[] });
+  const glucoseMarker = worsening(/hba1c|glucose/i);
+  if (glucoseMarker && patternCount("carbBalance", "heavy") >= 3) riskFlags.push({ id: "glucose-meal-pattern", severity: "watch", title: "Glucose trend and repeated carb-heavy meals", observation: `${glucoseMarker.name} worsened while several recent meals were assessed as carbohydrate-heavy. The timing may be useful to discuss; it does not establish cause.`, episodeTitles: [glucoseMarker.episodeTitle].filter(Boolean) as string[] });
+  for (const episode of episodes) {
+    const flagged = episode.checkins.filter((item: any) => item.flagged).at(-1);
+    const recentChange = episode.medicines?.find((item: any) => Date.now() - new Date(item.startDate).valueOf() <= 30 * 86400000);
+    if (flagged && recentChange && /mental|psychi|mood|sleep/i.test(`${episode.title} ${episode.type}`)) riskFlags.push({ id: `mood-med-${episode.id}`, severity: "attention", title: "Check-in change after a medicine change", observation: `${episode.title} has a worsening check-in after ${recentChange.name} was started or adjusted. Review the sequence with the clinician; this is not a causal finding.`, episodeTitles: [episode.title] });
+  }
+  const sevenDaysAgo = Date.now() - 7 * 86400000;
+  const digest = {
+    period: "Last 7 days",
+    newDocuments: docs.filter((document: any) => new Date(document.createdAt).valueOf() >= sevenDaysAgo),
+    abnormalLabs: biomarkers.filter((marker: any) => !["good", "normal"].includes(marker.status)),
+    missedMedicines: missedDoses,
+    upcomingAppointments: reminders,
+    foodPatterns: foodTrends,
+    worseningCheckins: episodes.flatMap((episode: any) => episode.checkins.filter((checkin: any) => checkin.flagged).slice(-1).map((checkin: any) => ({ episodeId: episode.id, episodeTitle: episode.title, ...checkin }))),
+  };
   return {
     profiles: allProfiles(),
     currentProfileId: profileId,
@@ -1471,6 +1602,12 @@ function dashboardData(profileId: number) {
     interventions,
     episodes,
     insights,
+    actions,
+    foodEntries,
+    foodTrends,
+    riskFlags,
+    missedDoses,
+    digest,
     reminders,
     nextReminder: reminders[0] || null,
     counts: {
@@ -1502,6 +1639,11 @@ function buildHealthContext(profileId: number) {
       interventions: data.interventions,
       episodes: data.episodes,
       documents: data.documents.slice(0, 20),
+      actions: data.actions,
+      meals: data.foodEntries.slice(0, 20),
+      foodTrends: data.foodTrends,
+      missedDoses: data.missedDoses,
+      riskFlags: data.riskFlags,
     },
     null,
     2,
@@ -1694,7 +1836,7 @@ app.post("/api/testing/reset", (req, res) => {
   db.exec("BEGIN IMMEDIATE");
   try {
     db.exec(
-      "DELETE FROM adherence_logs; DELETE FROM interventions; DELETE FROM documents; DELETE FROM episodes; DELETE FROM events; DELETE FROM followups; DELETE FROM biomarkers;",
+      "DELETE FROM medication_dose_logs; DELETE FROM adherence_logs; DELETE FROM food_entries; DELETE FROM document_actions; DELETE FROM interventions; DELETE FROM documents; DELETE FROM episodes; DELETE FROM events; DELETE FROM followups; DELETE FROM biomarkers;",
     );
     db.exec("COMMIT");
     res.json({ ok: true });
@@ -1715,6 +1857,10 @@ app.post(
         .json({ error: "No supported documents supplied." });
     const ai = aiClient();
     const profileId = resolveProfileId(req.query.profileId);
+    const requestedEpisodeId = Number(req.body?.episodeId);
+    const manualEpisode = Number.isFinite(requestedEpisodeId) && requestedEpisodeId > 0
+      ? db.prepare("SELECT id,title FROM episodes WHERE id=? AND profile_id=?").get(requestedEpisodeId, profileId) as any
+      : null;
     if (!ai)
       return res.status(503).json({
         error:
@@ -1751,7 +1897,9 @@ app.post(
         const extraction = parseModelJson(
           response.choices[0]?.message?.content || "{}",
         );
-        const episode = await classifyEpisode(extraction, ai, profileId);
+        const episode: EpisodeDecision = manualEpisode
+          ? { action: "existing", episodeId: manualEpisode.id, title: manualEpisode.title, type: null, confidence: 1, rationale: "Care track selected before upload." }
+          : await classifyEpisode(extraction, ai, profileId);
         const markerSchema =
           episode.action === "new" && episode.title
             ? await suggestEpisodeMarkers(ai, {
@@ -1807,7 +1955,9 @@ app.post(
         const extraction = parseModelJson(
           response.choices[0]?.message?.content || "{}",
         );
-        const episode = await classifyEpisode(extraction, ai, profileId);
+        const episode: EpisodeDecision = manualEpisode
+          ? { action: "existing", episodeId: manualEpisode.id, title: manualEpisode.title, type: null, confidence: 1, rationale: "Care track selected before upload." }
+          : await classifyEpisode(extraction, ai, profileId);
         const markerSchema =
           episode.action === "new" && episode.title
             ? await suggestEpisodeMarkers(ai, {
@@ -1857,6 +2007,74 @@ app.delete("/api/documents/:id", (req, res) => {
   const profileId = resolveProfileId(req.query.profileId);
   db.prepare("UPDATE documents SET status='archived' WHERE id=? AND profile_id=?").run(Number(req.params.id), profileId);
   res.json({ ok: true, preserved: true });
+});
+const reassignDocumentSchema = z.object({ episodeId: z.coerce.number().int().positive() });
+app.patch("/api/documents/:id/care-track", (req, res) => {
+  const profileId = resolveProfileId(req.query.profileId);
+  const parsed = reassignDocumentSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Choose a valid care track." });
+  const documentId = Number(req.params.id);
+  const document = db.prepare("SELECT id FROM documents WHERE id=? AND profile_id=?").get(documentId, profileId);
+  const episode = db.prepare("SELECT id FROM episodes WHERE id=? AND profile_id=?").get(parsed.data.episodeId, profileId);
+  if (!document || !episode) return res.status(404).json({ error: "Document or care track not found." });
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.prepare("DELETE FROM document_episodes WHERE document_id=?").run(documentId);
+    db.prepare("INSERT INTO document_episodes(document_id,episode_id,confidence,rationale) VALUES(?,?,1,?)").run(documentId, parsed.data.episodeId, "Care track reassigned by caregiver.");
+    db.prepare("UPDATE document_actions SET episode_id=? WHERE document_id=?").run(parsed.data.episodeId, documentId);
+    db.exec("COMMIT");
+    res.json({ ok: true });
+  } catch (error) { db.exec("ROLLBACK"); throw error; }
+});
+
+app.patch("/api/actions/:id", (req, res) => {
+  const profileId = resolveProfileId(req.query.profileId);
+  const status = z.enum(["open", "completed", "dismissed"]).safeParse(req.body.status);
+  if (!status.success) return res.status(400).json({ error: "Invalid action status." });
+  db.prepare("UPDATE document_actions SET status=? WHERE id IN (SELECT a.id FROM document_actions a JOIN documents d ON d.id=a.document_id WHERE a.id=? AND d.profile_id=?)")
+    .run(status.data, Number(req.params.id), profileId);
+  res.json({ ok: true });
+});
+
+const mealAssessmentSchema = z.object({
+  summary: z.string().min(3),
+  mealType: z.string().nullable().optional(),
+  protein: z.enum(["low", "present", "adequate", "unclear"]),
+  carbBalance: z.enum(["light", "balanced", "heavy", "unclear"]),
+  fatBalance: z.enum(["light", "balanced", "heavy", "unclear"]),
+  fiber: z.enum(["low", "present", "good", "unclear"]),
+  processedOrSugary: z.boolean(),
+  hydrationCue: z.string().nullable().optional(),
+  observations: z.array(z.string()).default([]),
+});
+app.post("/api/food", upload.single("photo"), async (req, res) => {
+  const file = req.file;
+  if (!file || !file.mimetype.startsWith("image/")) return res.status(400).json({ error: "Add a meal photo." });
+  const profileId = resolveProfileId(req.query.profileId);
+  const episodeId = Number(req.body?.episodeId) || null;
+  if (episodeId && !db.prepare("SELECT id FROM episodes WHERE id=? AND profile_id=?").get(episodeId, profileId)) return res.status(400).json({ error: "Care track not found." });
+  const ai = aiClient();
+  if (!ai) return res.status(503).json({ error: "Meal assessment model is not configured." });
+  try {
+    const response = await ai.chat.completions.create({
+      model: process.env.NEYSA_MODEL || "gemma-4-26b-a4b-it", temperature: 0.1,
+      messages: [{ role: "system", content: "Assess the visible meal without calorie counting. Be cautious about ingredients that cannot be seen. Return only JSON: {\"summary\":\"brief meal description and quality\",\"mealType\":\"breakfast|lunch|dinner|snack|unknown\",\"protein\":\"low|present|adequate|unclear\",\"carbBalance\":\"light|balanced|heavy|unclear\",\"fatBalance\":\"light|balanced|heavy|unclear\",\"fiber\":\"low|present|good|unclear\",\"processedOrSugary\":false,\"hydrationCue\":\"visible beverage cue or null\",\"observations\":[\"useful non-diagnostic observation\"]}" }, { role: "user", content: [{ type: "text", text: "Assess this meal photo." }, { type: "image_url", image_url: { url: `data:${file.mimetype};base64,${file.buffer.toString("base64")}` } }] as any }],
+    });
+    const raw = response.choices[0]?.message?.content || "{}";
+    const assessment = mealAssessmentSchema.parse(JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || raw));
+    const eatenAt = z.string().datetime().catch(new Date().toISOString()).parse(req.body?.eatenAt);
+    const inserted = db.prepare("INSERT INTO food_entries(profile_id,episode_id,eaten_at,meal_type,image_blob,mime_type,summary,assessment_json) VALUES(?,?,?,?,?,?,?,?)")
+      .run(profileId, episodeId, eatenAt, assessment.mealType || null, file.buffer, file.mimetype, assessment.summary, JSON.stringify(assessment));
+    db.prepare("INSERT INTO events(profile_id,event_type,event_date,title,meta,detail,tags_json) VALUES(?,?,?,?,?,?,?)")
+      .run(profileId, "food", eatenAt.slice(0, 10), assessment.mealType ? `${assessment.mealType} meal` : "Meal photo", "Photo assessment", assessment.summary, JSON.stringify([`Protein: ${assessment.protein}`, `Carbs: ${assessment.carbBalance}`, `Fiber: ${assessment.fiber}`]));
+    res.status(201).json({ id: Number(inserted.lastInsertRowid), assessment });
+  } catch (error) { res.status(502).json({ error: error instanceof Error ? error.message : "Could not assess the meal." }); }
+});
+app.get("/api/food/:id/image", (req, res) => {
+  const profileId = resolveProfileId(req.query.profileId);
+  const row = db.prepare("SELECT image_blob as image,mime_type as mimeType FROM food_entries WHERE id=? AND profile_id=?").get(Number(req.params.id), profileId) as any;
+  if (!row) return res.status(404).end();
+  res.type(row.mimeType).send(Buffer.from(row.image));
 });
 const interventionSchema = z.object({
   name: z.string().min(2).max(100),
@@ -1941,6 +2159,22 @@ app.post("/api/interventions/:id/adherence", (req, res) => {
   );
   res.json({ ok: true });
 });
+const doseLogSchema = z.object({
+  date: z.string(), slotKey: z.string().min(1).max(24),
+  status: z.enum(["taken", "missed", "skipped"]).default("taken"),
+  notes: z.string().max(500).optional(),
+});
+app.post("/api/interventions/:id/doses", (req, res) => {
+  const parsed = doseLogSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid medicine dose log." });
+  const profileId = resolveProfileId(req.query.profileId);
+  const intervention = db.prepare("SELECT id FROM interventions WHERE id=? AND profile_id=?").get(Number(req.params.id), profileId);
+  if (!intervention) return res.status(404).json({ error: "Medicine not found." });
+  const value = parsed.data;
+  db.prepare("INSERT INTO medication_dose_logs(intervention_id,log_date,slot_key,status,notes) VALUES(?,?,?,?,?) ON CONFLICT(intervention_id,log_date,slot_key) DO UPDATE SET status=excluded.status,logged_at=CURRENT_TIMESTAMP,notes=excluded.notes")
+    .run(Number(req.params.id), value.date, value.slotKey, value.status, value.notes || null);
+  res.json({ ok: true, notificationState: value.status === "taken" ? "resolved" : "active" });
+});
 app.get("/api/interventions/:id/adherence", (req, res) =>
   {
     const profileId = resolveProfileId(req.query.profileId);
@@ -1972,6 +2206,7 @@ app.patch("/api/followups/:id", (req, res) => {
 
 const questionSchema = z.object({
   question: z.string().trim().min(2).max(1000),
+  episodeId: z.coerce.number().int().positive().nullable().optional(),
 });
 app.post("/api/assistant", async (req, res) => {
   const p = questionSchema.safeParse(req.body);
@@ -1980,7 +2215,11 @@ app.post("/api/assistant", async (req, res) => {
   const ai = aiClient();
   if (!ai) return res.status(503).json({ error: "Neysa is not configured." });
   const profileId = resolveProfileId(req.query.profileId);
-  const context = buildHealthContext(profileId);
+  const fullData = dashboardData(profileId);
+  const selectedEpisode = p.data.episodeId ? fullData.episodes.find((episode: any) => Number(episode.id) === p.data.episodeId) : null;
+  const context = selectedEpisode
+    ? JSON.stringify({ careTrack: selectedEpisode, documents: fullData.documents.filter((item: any) => Number(item.episodeId) === selectedEpisode.id), actions: fullData.actions.filter((item: any) => Number(item.episodeId) === selectedEpisode.id), appointments: fullData.followups.filter((item: any) => item.episodeTitle === selectedEpisode.title), meals: fullData.foodEntries.filter((item: any) => Number(item.episodeId) === selectedEpisode.id), risks: fullData.riskFlags.filter((item: any) => item.episodeTitles.includes(selectedEpisode.title)) }, null, 2)
+    : buildHealthContext(profileId);
   if (context.length < 100)
     return res.json({
       answer:
@@ -2022,12 +2261,17 @@ app.post("/api/doctor-brief", async (req, res) => {
   const selected = parsed.data.episodeId
     ? data.episodes.find((item: any) => Number(item.id) === parsed.data.episodeId)
     : null;
-  const context = JSON.stringify(selected ? {
+  const context = (selected ? JSON.stringify({
     event: selected,
-    activeMedications: data.interventions.filter((item: any) => item.status === "active"),
+    appointmentPurpose: data.followups.find((item: any) => item.episodeTitle === selected.title && item.kind === "appointment") || selected.summary,
+    medications: data.interventions.filter((item: any) => Number(item.episodeId) === selected.id),
+    missedDoses: data.missedDoses.filter((item: any) => Number(item.episodeId) === selected.id),
     relatedTimeline: data.events.filter((item: any) => Number(item.episodeId) === selected.id),
-    relevantBiomarkers: data.biomarkers,
-  } : JSON.parse(buildHealthContext(profileId)), null, 2).slice(0, 70000);
+    relevantBiomarkers: data.biomarkers.filter((item: any) => Number(item.episodeId) === selected.id),
+    actions: data.actions.filter((item: any) => Number(item.episodeId) === selected.id),
+    riskFlags: data.riskFlags.filter((item: any) => item.episodeTitles.includes(selected.title)),
+    meals: data.foodEntries.filter((item: any) => Number(item.episodeId) === selected.id),
+  }, null, 2) : buildHealthContext(profileId)).slice(0, 70000);
   const documents = selected?.linkedDocuments || data.documents.slice(0, 8).map((d: any) => ({
     id: d.id, filename: d.filename, documentType: d.documentType, summary: d.summary, hasFile: d.hasFile,
   }));
@@ -2048,7 +2292,7 @@ app.post("/api/doctor-brief", async (req, res) => {
         {
           role: "system",
           content:
-            "Create a concise clinician appointment brief with: reason for visit, dated symptom/recovery timeline, abnormal or worsening findings, active medications and supplements, outstanding follow-ups, red flags to mention, and focused questions. Use only context; do not diagnose. Respect the patient's tailoring request without inventing facts.",
+            "Create a concise clinician appointment brief with: appointment purpose; recent dated symptom/check-in changes; latest abnormal biomarkers; medicines started, stopped, missed, or adjusted; outstanding actions and follow-ups; non-diagnostic risk observations; and 4-6 focused suggested questions. Use only context; do not diagnose. Respect the patient's tailoring request without inventing facts.",
         },
         { role: "user", content: `${context}\n\nPATIENT TAILORING REQUEST:\n${parsed.data.prompt || "None"}` },
       ],

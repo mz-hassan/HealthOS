@@ -21,4 +21,4 @@ export const insights = [
   { tone: 'neutral', eyebrow: 'PATTERN FOUND', title: 'Sleep and energy are moving together', text: 'On weeks with 7+ hours of sleep, your reported energy is 1.6 points higher on average.', action: 'Explore pattern' },
 ]
 
-export const nav = ['Overview', 'Care tracks', 'Medications', 'Biomarkers', 'Timeline', 'Documents', 'Doctor prep']
+export const nav = ['Overview', 'Care tracks', 'Medications', 'Biomarkers', 'Nutrition', 'Timeline', 'Documents', 'Doctor prep']

@@ -12,7 +12,8 @@
     "test:elder:generate": "node scripts/generate-synthetic-elder-corpus.mjs",
     "test:corpus": "node scripts/run-corpus-test.mjs",
     "test:features": "node scripts/run-feature-test.mjs",
-    "demo:care": "node scripts/setup-care-demo.mjs"
+    "demo:care": "node scripts/setup-care-demo.mjs",
+    "demo:showcase": "node scripts/setup-showcase-data.mjs"
   },
   "dependencies": {
     "@llamaindex/liteparse": "^2.1.2",

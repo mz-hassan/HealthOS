@@ -929,6 +929,7 @@ html[data-theme="dark"] .page-view {
 html[data-theme="dark"] .sidebar,
 html[data-theme="dark"] .topbar,
 html[data-theme="dark"] .card,
+html[data-theme="dark"] .empty-state,
 html[data-theme="dark"] .metric-card,
 html[data-theme="dark"] .bio-pill,
 html[data-theme="dark"] .bio-alert-card,
@@ -962,6 +963,23 @@ html[data-theme="dark"] .bio-alert-row {
   background: #16201f;
   border-color: #2b3835;
   color: #e7f0ec;
+}
+
+html[data-theme="dark"] .empty-state {
+  border-color: #34423e;
+}
+
+html[data-theme="dark"] .empty-state > span {
+  background: #20312d;
+  color: #8fceb7;
+}
+
+html[data-theme="dark"] .empty-state h3 {
+  color: #eef6f2;
+}
+
+html[data-theme="dark"] .empty-state p {
+  color: #97a7a0;
 }
 
 html[data-theme="dark"] .topbar {
@@ -1261,4 +1279,112 @@ html[data-theme="dark"] .mobile-shade {
 html[data-theme="dark"] .theme-toggle:hover,
 html[data-theme="dark"] .icon-btn:hover {
   background: #1a2624;
+}
+
+/* Connected actions, digest, documents, and nutrition */
+.upload-track-picker{display:flex;flex-direction:column;gap:6px;margin:0 0 16px}.upload-track-picker span,.document-filters label span,.document-track-select span{font-size:10px;font-weight:600;color:var(--muted)}.upload-track-picker select,.document-filters select,.document-filters input,.document-track-select select{height:38px;border:1px solid var(--line);border-radius:9px;background:var(--white);color:var(--ink);padding:0 10px}.upload-track-picker>small{font-size:9px;color:var(--muted)}
+.care-alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 18px}.care-alert-grid article{padding:19px}.care-alert-grid article>header,.digest-card>header,.nutrition-summary{display:flex;align-items:center;gap:11px}.care-alert-grid header>span{width:36px;height:36px;border-radius:10px;background:#f8e8df;color:#b75f43;display:grid;place-items:center}.care-alert-grid h3,.digest-card h2{margin:0;font:600 16px Manrope}.action-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}.action-row>div{display:flex;flex-direction:column;gap:3px;flex:1}.action-row b{font-size:12px}.action-row small{font-size:9px;color:var(--muted)}.status-chip{font-size:8px;text-transform:uppercase;padding:4px 7px;border-radius:10px;background:#f5e3da;color:#a5523a}.digest-card{padding:20px;margin:0 0 35px}.digest-card>header{justify-content:space-between}.digest-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:16px}.digest-grid>div{background:#f6f7f3;border-radius:10px;padding:12px;display:flex;flex-direction:column}.digest-grid b{font:600 22px Manrope;color:var(--green)}.digest-grid span{font-size:9px;color:var(--muted)}.digest-note{font-size:10px;color:var(--muted);margin:10px 0 0}.risk-section{margin:0 0 35px}.insight-card>svg{color:#b56c42;margin-bottom:10px}
+.meal-photo-picker{width:100%;min-height:145px;border:1.5px dashed #aebfb7;border-radius:12px;background:#f6faf7;color:#3d6558;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}.meal-photo-picker small{font-size:9px;color:var(--muted)}.meal-modal label{display:flex;flex-direction:column;gap:6px;margin-top:14px}.meal-modal select{height:39px;border:1px solid var(--line);border-radius:9px;background:var(--white);color:var(--ink);padding:0 10px}
+.document-filters{display:grid;grid-template-columns:1fr 1fr 1fr auto;align-items:end;gap:12px;padding:15px;margin-bottom:15px}.document-filters label{display:flex;flex-direction:column;gap:5px}.document-track-select{display:flex;gap:8px;align-items:center;margin-top:10px}.document-track-select select{height:30px;font-size:10px}.document-action-summary{display:flex;flex-direction:column;margin:10px 0;padding:9px;background:#f6f7f3;border-radius:8px}.document-action-summary b{font-size:10px}.document-action-summary small{margin-top:3px}.document-preview-modal{width:min(1000px,95vw);height:min(800px,92vh);background:var(--white);border-radius:16px;display:flex;flex-direction:column;overflow:hidden}.document-preview-modal>header{display:flex;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}.document-preview-modal h2{font:600 17px Manrope;margin:0}.document-preview-modal iframe{border:0;flex:1;background:#eee}
+.event-meta button{border:0;background:transparent;color:inherit;display:flex;align-items:center;gap:5px;padding:0;text-decoration:underline;text-decoration-color:#ccd5d0}.track-thread-summary{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.track-thread-summary span{display:flex;align-items:center;gap:5px;font-size:9px;background:#f3f5f1;padding:5px 7px;border-radius:7px}.track-doc-drawer{position:absolute;right:0;top:0;bottom:0;width:min(620px,100%);background:var(--white);padding:24px;overflow:auto;box-shadow:-20px 0 60px #0003}.track-doc-drawer>header{display:flex;justify-content:space-between}.track-doc-drawer h2{margin:0;font:600 22px Manrope}.track-doc-drawer>article{display:flex;align-items:flex-start;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}.track-doc-drawer>article>div{flex:1}.track-doc-drawer article b,.track-doc-drawer article small{display:block}.track-doc-drawer article p{font-size:10px;color:var(--muted)}
+.nutrition-summary{justify-content:space-between;padding:22px;margin-bottom:15px}.nutrition-summary h2{margin:0;font:600 20px Manrope}.nutrition-summary p{font-size:11px;color:var(--muted);margin:5px 0}.food-trends{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:15px}.food-trends article{display:flex;gap:10px;padding:15px;color:#8d6034}.food-trends p{margin:0;font-size:11px;color:var(--ink)}.food-timeline{display:grid;gap:14px}.food-entry{display:grid;grid-template-columns:220px 1fr;overflow:hidden}.food-entry>img{width:100%;height:100%;min-height:190px;object-fit:cover}.food-entry>div{padding:18px}.food-entry header{display:flex;justify-content:space-between}.food-entry h3{font:600 15px Manrope}.meal-balance{display:flex;flex-wrap:wrap;gap:7px}.meal-balance span{font-size:9px;background:#f2f4f0;border-radius:7px;padding:6px}.meal-balance b{text-transform:capitalize}.food-signal{font-size:9px;color:#a95a3f}
+html[data-theme="dark"] .digest-grid>div,html[data-theme="dark"] .document-action-summary,html[data-theme="dark"] .track-thread-summary span,html[data-theme="dark"] .meal-balance span,html[data-theme="dark"] .meal-photo-picker{background:#111a19;color:#dce8e3}html[data-theme="dark"] .document-preview-modal,html[data-theme="dark"] .track-doc-drawer{background:#111918;color:#e6efeb}html[data-theme="dark"] select,html[data-theme="dark"] input{background:#111918;color:#e6efeb;border-color:#2b3935}
+@media(max-width:900px){.digest-grid{grid-template-columns:repeat(3,1fr)}.document-filters{grid-template-columns:1fr 1fr}.food-entry{grid-template-columns:160px 1fr}}
+@media(max-width:620px){.care-alert-grid,.food-trends{grid-template-columns:1fr}.digest-grid{grid-template-columns:repeat(2,1fr)}.document-filters{grid-template-columns:1fr}.food-entry{grid-template-columns:1fr}.food-entry>img{height:210px}.nutrition-summary{align-items:flex-start;flex-direction:column}.track-doc-drawer{padding:18px}}
+
+/* Medication controls and reference rows */
+.slot-check {
+  border-radius: 50%;
+  background: transparent;
+  border-color: #cbd5ce;
+  color: transparent;
+  transition: background .16s, border-color .16s, color .16s;
+}
+.slot-check svg {
+  opacity: 0;
+  transform: scale(.75);
+  transition: opacity .16s, transform .16s;
+}
+.slot-check:hover {
+  background: #edf4f0;
+  border-color: #7aaa99;
+  color: #5d8d7c;
+}
+.slot-check:hover svg {
+  opacity: .55;
+  transform: scale(1);
+}
+.slot-check.done svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+html[data-theme="dark"] .med-compact-row {
+  background: #182321;
+  border-color: #30403b;
+  color: #e7f0ec;
+}
+html[data-theme="dark"] .med-compact-row.general {
+  background: #172520;
+  border-color: #2d443a;
+}
+html[data-theme="dark"] .med-compact-row.event-amber {
+  background: #28231b;
+  border-color: #4a3d2a;
+}
+html[data-theme="dark"] .med-compact-row.event-violet {
+  background: #241f2c;
+  border-color: #423750;
+}
+html[data-theme="dark"] .med-compact-row.event-gold {
+  background: #28261b;
+  border-color: #484329;
+}
+html[data-theme="dark"] .med-compact-row.event-coral {
+  background: #2b211f;
+  border-color: #4c3530;
+}
+html[data-theme="dark"] .med-compact-main small,
+html[data-theme="dark"] .med-compact-meta,
+html[data-theme="dark"] .med-list-section small,
+html[data-theme="dark"] .med-slot-card small,
+html[data-theme="dark"] .med-slot header small,
+html[data-theme="dark"] .slot-empty {
+  color: #9db0a8;
+}
+html[data-theme="dark"] .slot-check {
+  background: transparent;
+  border-color: #465650;
+  color: transparent;
+}
+html[data-theme="dark"] .slot-check:hover {
+  background: #20302c;
+  border-color: #6f9f8e;
+  color: #8fbead;
+}
+html[data-theme="dark"] .slot-check.done {
+  background: #2f7b66;
+  border-color: #2f7b66;
+  color: #fff;
+}
+
+/* Let the full caregiver rail remain reachable on short screens. */
+.sidebar {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b9c3bc transparent;
+}
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: #b9c3bc;
+  border-radius: 999px;
+}
+html[data-theme="dark"] .sidebar {
+  scrollbar-color: #42534d transparent;
+}
+html[data-theme="dark"] .sidebar::-webkit-scrollbar-thumb {
+  background: #42534d;
 }
