@@ -7,7 +7,7 @@ A local-first longitudinal health system for people and the family members helpi
 ## Submission links
 
 - **Repository:** https://github.com/mz-hassan/HealthOS
-- **Product demo:** Add hosted URL or screen recording before portal submission
+- **Product walkthrough:** [`submission/Health-OS-Pitch-Deck.pdf`](submission/Health-OS-Pitch-Deck.pdf) (UI flow and technical proof)
 - **Pitch deck:** [`submission/Health-OS-Pitch-Deck.pdf`](submission/Health-OS-Pitch-Deck.pdf)
 - **AI Impact Statement:** [`submission/AI-IMPACT-STATEMENT.md`](submission/AI-IMPACT-STATEMENT.md)
 - **Three-minute demo script:** [`submission/DEMO-SCRIPT.md`](submission/DEMO-SCRIPT.md)
